@@ -12,4 +12,5 @@
       "type": "git"
     , "url": "git://github.com/enyo/mongo-rest.git"
   }
+  , "homepage": "https://github.com/enyo/mongo-rest"
 }
