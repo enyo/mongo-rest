@@ -1,4 +1,4 @@
-# MongooseREST
+# MongooseREST Version 1.0.0-dev
 
 This is an [express][] [node][] [module][node modules] to provide basic [REST][] support to access [mongodb][] [documents][mongodb documents] via [mongoose][].
 
@@ -12,6 +12,7 @@ This is an [express][] [node][] [module][node modules] to provide basic [REST][]
 [mongoose]: http://www.mongoosejs.com
 
 
+I use [semantic versioning](http://semver.org/) and my [tag script](https://github.com/enyo/tag) to tag this module.
 
 ## Usage
 
@@ -115,6 +116,12 @@ An example of an interceptor could look like this:
         info.doc.textVersions.push(info.doc.textSource);
       }
     });
+
+
+
+## Tagging
+
+I use
 
 
 [mongoose model]: http://mongoosejs.com/docs/model-definition.html
