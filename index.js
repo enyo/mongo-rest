@@ -18,9 +18,9 @@ var _ = require('underscore');
  *     - `viewPrefix` The prefix for a resource view file. Default to `'resource_'`
  * 
  * @param {Object} app The express app object to register the routes to.
- * @param {Object} options Options for this MongooseRest instance
+ * @param {Object} options Options for this MongoRest instance
  */
-var MongooseRest = function(app, options) {
+var MongoRest = function(app, options) {
   this.app = app;
   this.options = _.extend({ urlPath: '/', viewPath: '', viewPrefix: 'resource_' }, options || {});
   // The models for which there will be a rest interface
@@ -35,13 +35,13 @@ var MongooseRest = function(app, options) {
  * Exporting the Class
  * @type {Function}
  */
-module.exports = exports = MongooseRest;
+module.exports = exports = MongoRest;
 
 
 /**
  * Registers all REST routes with the provided `app` object.
  */
-MongooseRest.prototype.registerRoutes = function() {
+MongoRest.prototype.registerRoutes = function() {
   /**
    * Accessing multiple resources
    */
@@ -67,7 +67,7 @@ MongooseRest.prototype.registerRoutes = function() {
  * @param {String} name
  * @param {Object} model
  */
-MongooseRest.prototype.addResource = function(name, model) {
+MongoRest.prototype.addResource = function(name, model) {
   this.availableModels[name] = model;
 };
  
@@ -86,7 +86,7 @@ MongooseRest.prototype.addResource = function(name, model) {
  * @param {String} event
  * @param {Function} handler
  */
-MongooseRest.prototype.addInterceptor = function(resource, event, handler) {
+MongoRest.prototype.addInterceptor = function(resource, event, handler) {
   var interceptors = this.interceptors;
   if (!_.isArray(event)) event = [event];
   _.each(event, function(event) {
@@ -102,7 +102,7 @@ MongooseRest.prototype.addInterceptor = function(resource, event, handler) {
  * @param  {String} event
  * @param  {Object} params
  */
-MongooseRest.prototype.invokeInterceptors = function(resource, event, params) {
+MongoRest.prototype.invokeInterceptors = function(resource, event, params) {
   var interceptors = this.interceptors;
   if (!interceptors[resource] || !interceptors[resource][event]) return;
 
@@ -124,7 +124,7 @@ MongooseRest.prototype.invokeInterceptors = function(resource, event, params) {
  *
  * @return {Function} The function to use as route
  */
-MongooseRest.prototype.collection = function() { return _.bind(function(req, res, next) {
+MongoRest.prototype.collection = function() { return _.bind(function(req, res, next) {
   if (!this.availableModels[req.params.resource]) throw new Error('Undefined resource: ' + req.params.resource);
 
   req.model = this.availableModels[req.params.resource];
@@ -138,7 +138,7 @@ MongooseRest.prototype.collection = function() { return _.bind(function(req, res
  * 
  * @return {Function} The function to use as route
  */
-MongooseRest.prototype.collectionGet = function() { return _.bind(function(req, res, next) {
+MongoRest.prototype.collectionGet = function() { return _.bind(function(req, res, next) {
   var self = this;
   req.model.find().sort('date', 'descending').run(function(err, docs) {
     if (err) {
@@ -162,7 +162,7 @@ MongooseRest.prototype.collectionGet = function() { return _.bind(function(req, 
  * 
  * @return {Function} The function to use as route
  */
-MongooseRest.prototype.collectionPost = function() { return _.bind(function(req, res, next) {
+MongoRest.prototype.collectionPost = function() { return _.bind(function(req, res, next) {
   var self = this;
 
   if (!req.body || !req.body.newResource) throw new Error('Nothing submitted.');
@@ -194,7 +194,7 @@ MongooseRest.prototype.collectionPost = function() { return _.bind(function(req,
  *
  * @return {Function} The function to use as route
  */
-MongooseRest.prototype.entity = function() { return _.bind(function(req, res, next) {
+MongoRest.prototype.entity = function() { return _.bind(function(req, res, next) {
   if (!this.availableModels[req.params.resource]) throw new Error('Undefined resource: ' + req.params.resource);
 
   req.model = this.availableModels[req.params.resource];
@@ -215,7 +215,7 @@ MongooseRest.prototype.entity = function() { return _.bind(function(req, res, ne
  * 
  * @return {Function} The function to use as route
  */
-MongooseRest.prototype.entityGet = function() { return _.bind(function(req, res, next) {
+MongoRest.prototype.entityGet = function() { return _.bind(function(req, res, next) {
   this.invokeInterceptors(req.params.resource, 'get', [ req.doc, req, res, next ]);
 
   res.render(this.options.viewPath + this.options.viewPrefix + req.params.resource + '_show', { doc: req.doc, site: req.params.resource + '-show' });
@@ -232,7 +232,7 @@ MongooseRest.prototype.entityGet = function() { return _.bind(function(req, res,
  * 
  * @return {Function} The function to use as route
  */
-MongooseRest.prototype.entityPut = function() { return _.bind(function(req, res, next) {
+MongoRest.prototype.entityPut = function() { return _.bind(function(req, res, next) {
   var self = this;
   if (!req.body || !req.body.newResource) throw new Error('Nothing submitted.');
 
@@ -270,7 +270,7 @@ MongooseRest.prototype.entityPut = function() { return _.bind(function(req, res,
  * 
  * @return {Function} The function to use as route
  */
-MongooseRest.prototype.entityDelete = function() { return _.bind(function(req, res, next) {
+MongoRest.prototype.entityDelete = function() { return _.bind(function(req, res, next) {
   var info = { doc: req.doc }
     , self = this;
   this.invokeInterceptors(req.params.resource, 'delete', [ info, req, res, next ]);

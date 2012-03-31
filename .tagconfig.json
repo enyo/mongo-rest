@@ -3,7 +3,7 @@
     {
       "name": "Readme.md",
       "regexs": [
-        "MongooseREST Version ###"
+        "MongoREST Version ###"
       ]
     },
     {

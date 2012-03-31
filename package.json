@@ -1,5 +1,5 @@
 {
-    "name": "mongoose-rest"
+    "name": "mongo-rest"
   , "description": "A simple to use mongoose REST API."
   , "version": "1.0.1-dev"
   , "author": "Matias Meno <m@tias.me>"
@@ -10,6 +10,6 @@
     }
   , "repository": {
       "type": "git"
-    , "url": "git://github.com/enyo/mongoose-rest.git"
+    , "url": "git://github.com/enyo/mongo-rest.git"
   }
 }
