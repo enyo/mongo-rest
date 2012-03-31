@@ -1,4 +1,4 @@
-# MongooseREST Version 1.0.0-dev
+# MongooseREST Version 1.0.0
 
 This is an [express][] [node][] [module][node modules] to provide basic [REST][] support to access [mongodb][] [documents][mongodb documents] via [mongoose][].
 
