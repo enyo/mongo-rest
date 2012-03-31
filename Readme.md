@@ -4,12 +4,12 @@ This is an [express][] [node][] [module][node modules] to provide basic [REST][]
 
 
 [express]: http://www.expressjs.com/
-[node]: www.nodejs.org
+[node]: http://www.nodejs.org
 [node modules]: http://nodejs.org/api/modules.html
 [REST]: http://en.wikipedia.org/wiki/Representational_state_transfer
-[mongodb]: www.mongodb.org
+[mongodb]: http://www.mongodb.org
 [mongodb documents]: http://www.mongodb.org/display/DOCS/Documents
-[mongoose]: www.mongoosejs.com
+[mongoose]: http://www.mongoosejs.com
 
 
 
