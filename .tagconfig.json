@@ -1,0 +1,16 @@
+{
+  "files": [
+    {
+      "name": "Readme.md",
+      "regexs": [
+        "MongooseREST Version ###"
+      ]
+    },
+    {
+      "name": "package.json",
+      "regexs": [
+        "\"version\": \"###\""
+      ]
+    }
+  ]
+}
