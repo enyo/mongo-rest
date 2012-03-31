@@ -1,6 +1,6 @@
 # MongooseREST
 
-This is an [express] [node] [module][node modules] to provide basic [REST] support to access [mongodb] [documents][mongodb documents] via [mongoose].
+This is an [express][] [node][] [module][node modules] to provide basic [REST][] support to access [mongodb][] [documents][mongodb documents] via [mongoose][].
 
 
 [express]: http://www.expressjs.com/
@@ -20,10 +20,9 @@ The usage of this module is quite straight forward:
 1. Include and instantiate `mongoose-rest`.
 2. Provide `mongoose-rest` with the [mongoose models][mongoose model] you want to support.
 3. Create a view file for each resource you want rendered as HTML.
+4. Optionally you can also define interceptors in case you want some resources to be handled exceptionally.
 
 That's it, you're done.
-
-4. Optionally you can also define interceptors in case you want some resources to be handled exceptionally.
 
 
 ### 1. Including and instantiating mongoose-rest
