@@ -33,6 +33,7 @@ MongooseREST exposes a class you instatiate with your options. The long version 
       , mongooseRest = new MongooseRest(app, { viewPath: 'admin/resources/' });
 
 The options for MongooseRest are:
+
   - `urlPath`: The path were the REST interface is accessible. Defaults to `/`.
   - `viewPath`: The path were the views to render resources are located.
   - `viewPrefix`: The prefix of the resource views. Defaults to 'resource_'. So for example a list of users will use the view `resource_users`
