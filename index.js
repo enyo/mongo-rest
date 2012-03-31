@@ -16,13 +16,15 @@ var _ = require('underscore');
  *     - `urlPath` The path prefix for the rest resources. Default to `/`
  *     - `viewPath` the path where the views to render the resources are located. Defaults to `''`
  *     - `viewPrefix` The prefix for a resource view file. Default to `'resource_'`
+ *     - `enableXhr` Enables a JSON interface for XMLHttpRequests. Make sure you don't leak important information!
+ *     - `singleView` Whether there is a single view or not. If not, only the collection view will be used.
  * 
  * @param {Object} app The express app object to register the routes to.
  * @param {Object} options Options for this MongoRest instance
  */
 var MongoRest = function(app, options) {
   this.app = app;
-  this.options = _.extend({ urlPath: '/', viewPath: '', viewPrefix: 'resource_' }, options || {});
+  this.options = _.extend({ urlPath: '/', viewPath: '', viewPrefix: 'resource_', enableXhr: false, singleView: true }, options || {});
   // The models for which there will be a rest interface
   this.availableModels = { };
   // Interceptors for specific events.
@@ -112,6 +114,56 @@ MongoRest.prototype.invokeInterceptors = function(resource, event, params) {
 };
 
 
+/**
+ * Called when there was an error.
+ * Either calles next with the error or returns it as XMLHttp.
+ * 
+ * @param  {Object}   err  
+ * @param  {Object}   req  
+ * @param  {Object}   res  
+ * @param  {Function} next 
+ * @api private
+ */
+MongoRest.prototype.renderError = function (err, req, res, next) {
+  if (this.options.enableXhr && req.xhr) res.send({ error: err });
+  else next(err);
+};
+
+
+/**
+ * Called to render a collection of docs 
+ * 
+ * @param  {Object}   err  
+ * @param  {Object}   req  
+ * @param  {Object}   res  
+ * @param  {Function} next 
+ * @api private
+ */
+MongoRest.prototype.renderCollection = function (docs, req, res, next) {
+  if (this.options.enableXhr && req.xhr) {
+    res.send({ docs: docs });
+  }
+  else {
+    res.render(this.options.viewPath + this.options.viewPrefix + req.params.resource, { docs: docs, site: req.params.resource + '-list' });
+  }
+};
+
+
+
+
+/**
+ * Called to render a collection of docs 
+ * 
+ * @param  {Object}   err  
+ * @param  {Object}   req  
+ * @param  {Object}   res  
+ * @param  {Function} next 
+ * @api private
+ */
+ MongoRest.prototype.renderEntity = function (doc, req, res, next) {
+  if (this.options.enableXhr && req.xhr) res.send({ doc: doc });
+  else res.render(this.options.viewPath + this.options.viewPrefix + req.params.resource + '_show', { doc: doc, site: req.params.resource + '-show' });
+};
 
 
 
@@ -142,11 +194,11 @@ MongoRest.prototype.collectionGet = function() { return _.bind(function(req, res
   var self = this;
   req.model.find().sort('date', 'descending').run(function(err, docs) {
     if (err) {
-      next(err);
+      self.renderError(err, req, res, next);
       return;
     }
     else {
-      res.render(self.options.viewPath + self.options.viewPrefix + req.params.resource, { docs: docs, site: req.params.resource + '-list' });
+      self.renderCollection(docs, req, res, next);
     }
   });
 }, this); };
@@ -183,7 +235,7 @@ MongoRest.prototype.collectionPost = function() { return _.bind(function(req, re
     else {
       self.invokeInterceptors(req.params.resource, 'post.success', [ info, req, res, next ]);
     }
-    res.redirect('/admin/resources/' + req.params.resource);
+    res.redirect(self.options.urlPath + req.params.resource);
   });
 }, this); };
 
@@ -195,6 +247,7 @@ MongoRest.prototype.collectionPost = function() { return _.bind(function(req, re
  * @return {Function} The function to use as route
  */
 MongoRest.prototype.entity = function() { return _.bind(function(req, res, next) {
+  var self = this;
   if (!this.availableModels[req.params.resource]) throw new Error('Undefined resource: ' + req.params.resource);
 
   req.model = this.availableModels[req.params.resource];
@@ -202,7 +255,7 @@ MongoRest.prototype.entity = function() { return _.bind(function(req, res, next)
   req.model.findOne({ _id: req.params.id }, function(err, doc) {
     if (err) {
       req.flash('error', err.message);
-      res.redirect('/admin/resources/' + req.params.resource);
+      res.redirect(self.options.urlPath + req.params.resource);
       return;
     }
     req.doc = doc;
@@ -218,7 +271,7 @@ MongoRest.prototype.entity = function() { return _.bind(function(req, res, next)
 MongoRest.prototype.entityGet = function() { return _.bind(function(req, res, next) {
   this.invokeInterceptors(req.params.resource, 'get', [ req.doc, req, res, next ]);
 
-  res.render(this.options.viewPath + this.options.viewPrefix + req.params.resource + '_show', { doc: req.doc, site: req.params.resource + '-show' });
+  this.renderEntity(req.doc, req, res, next);
 }, this); };
 
 /**
@@ -255,7 +308,7 @@ MongoRest.prototype.entityPut = function() { return _.bind(function(req, res, ne
       req.flash('success', 'Successfully updated the record.')
     }
 
-    res.redirect('/admin/resources/' + req.params.resource + '/id/' + req.doc._id);
+    res.redirect(self.options.urlPath + req.params.resource + (self.options.singleView ? '/id/' + req.doc._id : ''));
   });
 
 }, this); };
@@ -282,7 +335,7 @@ MongoRest.prototype.entityDelete = function() { return _.bind(function(req, res,
       throw err;
     }
     self.invokeInterceptors(req.params.resource, 'delete.success', [ info, req, res, next ]);
-    res.redirect('/admin/resources/' + req.params.resource);
+    res.redirect(self.options.urlPath + req.params.resource);
   });
 }, this); };
 
