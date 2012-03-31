@@ -81,6 +81,9 @@ You register an interceptor like this:
       , handler = function(info, req, res, next) { };
 
     mongooseRest.addInterceptor('users', eventName, handler);
+    // You can also provide the same handler for multiple event names:
+    mongooseRest.addInterceptor('users', [ 'post', 'put' ], function() { });
+
 
 The available event names are:
 
@@ -95,6 +98,23 @@ The parameters provided to the handler are:
   - `info` An object containing the `doc` and or the `values` that will be used to update the record
   - `req`
   - `res`
+
+
+An example of an interceptor could look like this:
+
+    /**
+     * Intercepts posts and puts for guestbook-messages. It compiles the provided textSource with jade, and stores
+     * the old textSource in a textVersions array to provide a history.
+     */
+    mongooseRest.addInterceptor('guestbook-messages', [ 'post', 'put' ], function(info) {
+      // Compile the new textSource value with jade, and put the compiled code in textHtml
+      info.values.textHtml = (jade.compile(info.values.textSource))({});
+      // Since there is no existing doc when posting a new resource, we test if it exists...
+      if (info.doc) {
+        // ...and if it does we add the old textSource to the textVersions array to have a history.
+        info.doc.textVersions.push(info.doc.textSource);
+      }
+    });
 
 
 [mongoose model]: http://mongoosejs.com/docs/model-definition.html
