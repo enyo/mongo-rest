@@ -9,8 +9,11 @@
       "underscore": "1.x"
     }
   , "devDependencies": {
-    "should": "0.x"
-  }
+      "should": "0.x"
+    }
+  , "scripts": {
+      "test": "make test"
+    }
   , "repository": {
       "type": "git"
     , "url": "git://github.com/enyo/mongo-rest.git"
