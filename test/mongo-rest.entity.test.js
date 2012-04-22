@@ -71,7 +71,9 @@ describe('MongoRest', function() {
 
   describe('entityGet()', function() {
     var mongoRest = new MongoRest({ }, null, true) // Don't register routes
-      , req = { resource: { }, doc: new function() { this.doc = true; }, params: { resourceName: 'user' } };
+      , req = { resource: { singularName: "user", pluralName: "users" }, doc: new function() { this.doc = true; }, params: { resourceName: 'user' } };
+
+    mongoRest.addResource("user", { });
 
     it("should directly render if there are no interceptors", function(done) {
       mongoRest.renderEntity = function(doc) {
@@ -144,6 +146,8 @@ describe('MongoRest', function() {
         , params: { resourceName: 'user' }
       }
       ;
+
+    mongoRest.addResource("user", { });
 
     describe("entityPut()", function() {
       it("should call the 'put' and 'put.success' event interceptors on success", function(done) {

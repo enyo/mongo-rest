@@ -8,8 +8,18 @@ var MongoRest = require('../lib/index')
 describe('MongoRest interceptors', function() {
 
   describe("addInterceptor()", function() {
-    it("should handle calss with a string as event", function() {
+    it("should throw an error if the resource is undefined", function() {
       var mongoRest = new MongoRest({ }, null, true); // dont register routes
+
+      (function() {
+        mongoRest.addInterceptor("user", "post", function() { });
+      }).should.throw("The resource user is not defined!");
+    });
+    it("should handle class with a string as event", function() {
+      var mongoRest = new MongoRest({ }, null, true); // dont register routes
+
+      mongoRest.addResource("user", { });
+      mongoRest.addResource("address", { });
 
       var interceptor1 = new function() { this.inter1 = true; }
         , interceptor2 = new function() { this.inter2 = true; };
@@ -21,6 +31,9 @@ describe('MongoRest interceptors', function() {
     });
     it("should handle an array of events", function() {
       var mongoRest = new MongoRest({ }, null, true); // dont register routes
+
+      mongoRest.addResource("user", { });
+      mongoRest.addResource("address", { });
 
       var interceptor1 = new function() { this.inter1 = true; }
         , interceptor2 = new function() { this.inter2 = true; };
@@ -34,24 +47,24 @@ describe('MongoRest interceptors', function() {
 
   describe('invokeInterceptors()', function() {
     var mongoRest = new MongoRest({ }, null, true); // dont register routes
-    mongoRest.addResource('users', {});
+    mongoRest.addResource('user', {});
     it('should call callback directly if there is no interceptor', function() {
       var called = false;
-      mongoRest.invokeInterceptors('users', 'get', { doc: { } }, req, res, next, function() { called = true; });
+      mongoRest.invokeInterceptors('user', 'get', { doc: { } }, req, res, next, function() { called = true; });
       called.should.be.true;
     });
     it('should call callback when interceptor finished synchronously', function() {
       var called = false;
-      mongoRest.addInterceptor('users', 'get', function(info, done) { done(); });
-      mongoRest.invokeInterceptors('users', 'get', { doc: { } }, req, res, next, function() { called = true; });
+      mongoRest.addInterceptor('user', 'get', function(info, done) { done(); });
+      mongoRest.invokeInterceptors('user', 'get', { doc: { } }, req, res, next, function() { called = true; });
       called.should.be.true;
     });
     it('should call callback exactly once when multiple interceptors finish synchronously', function() {
       var called = 0;
-      mongoRest.addInterceptor('users', 'get', function(info, done) { done(); });
-      mongoRest.addInterceptor('users', 'get', function(info, done) { done(); });
-      mongoRest.addInterceptor('users', 'get', function(info, done) { done(); });
-      mongoRest.invokeInterceptors('users', 'get', { doc: { } }, req, res, next, function() { called ++; });
+      mongoRest.addInterceptor('user', 'get', function(info, done) { done(); });
+      mongoRest.addInterceptor('user', 'get', function(info, done) { done(); });
+      mongoRest.addInterceptor('user', 'get', function(info, done) { done(); });
+      mongoRest.invokeInterceptors('user', 'get', { doc: { } }, req, res, next, function() { called ++; });
       called.should.equal(1);
     });
     it('should call callback when interceptor finished asynchronously', function(done) {
@@ -59,10 +72,10 @@ describe('MongoRest interceptors', function() {
       mongoRest.invokeInterceptors('users', 'get', { doc: { } }, req, res, next, function() { done(); });
     });
     it('should call callback exactly once when multiple interceptors finish asynchronously', function(done) {
-      mongoRest.addInterceptor('users', 'get', function(info, done) { setTimeout(done, 1); });
-      mongoRest.addInterceptor('users', 'get', function(info, done) { setTimeout(done, 1); });
-      mongoRest.addInterceptor('users', 'get', function(info, done) { setTimeout(done, 1); });
-      mongoRest.invokeInterceptors('users', 'get', { doc: { } }, req, res, next, function() { done(); });
+      mongoRest.addInterceptor('user', 'get', function(info, done) { setTimeout(done, 1); });
+      mongoRest.addInterceptor('user', 'get', function(info, done) { setTimeout(done, 1); });
+      mongoRest.addInterceptor('user', 'get', function(info, done) { setTimeout(done, 1); });
+      mongoRest.invokeInterceptors('user', 'get', { doc: { } }, req, res, next, function() { done(); });
     });
 
     it('should actually invoke the "get" interceptors with each doc when "collection-get" is invoked', function(done) {
@@ -74,7 +87,7 @@ describe('MongoRest interceptors', function() {
       var docs = [doc1, doc2, doc3]
         , remainingDocs = [doc1, doc2, doc3];
 
-      mongoRest.addInterceptor('users', 'get', function(info, done) {
+      mongoRest.addInterceptor('user', 'get', function(info, done) {
         // Check if the doc actually exists.
         var index = remainingDocs.indexOf(info.doc);
         index.should.not.equal(-1);
@@ -83,7 +96,7 @@ describe('MongoRest interceptors', function() {
         called ++;
         setTimeout(done, 1);
       });
-      mongoRest.invokeInterceptors('users', 'get-collection', { docs: docs }, req, res, next, function() {
+      mongoRest.invokeInterceptors('user', 'get-collection', { docs: docs }, req, res, next, function() {
         called.should.equal(3);
         done();
       });

@@ -98,7 +98,7 @@ You register an interceptor like this:
     var eventName = 'post.success'
       , handler = function(info, done, req, res, next) { /* Do stuff */ done(); };
 
-    mongoRest.addInterceptor('users', eventName, handler);
+    mongoRest.addInterceptor('user', eventName, handler);
     // You can also provide the same handler for multiple event names:
     mongoRest.addInterceptor('users', [ 'post', 'put' ], handler);
 
@@ -128,7 +128,7 @@ An example of an interceptor could look like this:
      * Intercepts posts and puts for guestbook-messages. It compiles the provided textSource with jade, and stores
      * the old textSource in a textVersions array to provide a history.
      */
-    mongoRest.addInterceptor('guestbook-messages', [ 'post', 'put' ], function(info, done) {
+    mongoRest.addInterceptor('guestbook-message', [ 'post', 'put' ], function(info, done) {
       // Compile the new textSource value with jade, and put the compiled code in textHtml
       info.values.textHtml = (jade.compile(info.values.textSource))({});
       // Since there is no existing doc when posting a new resource, we test if it exists...

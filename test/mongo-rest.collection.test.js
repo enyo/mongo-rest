@@ -79,8 +79,10 @@ describe('MongoRest', function() {
           , sort: function() { return model; }
           , run: run
         }
-      , req = { model: { }, resource: { singularName: 'user', pluralName: 'users', model: model }, params: { resourceName: 'user' } }
+      , req = { resource: { singularName: 'user', pluralName: 'users', model: model }, params: { resourceName: 'user' } }
       ;
+
+    mongoRest.addResource("user", { });
 
     req.model = model;
 
@@ -150,6 +152,8 @@ describe('MongoRest', function() {
         , params: { resourceName: 'user' }
       }
       ;
+
+    mongoRest.addResource("user", { });
 
 
     it("should call the 'post' and 'post.success' event interceptors on success", function(done) {
