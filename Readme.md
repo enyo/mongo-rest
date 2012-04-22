@@ -35,30 +35,40 @@ MongoREST exposes a class you instatiate with your options. The long version loo
 
 The options for MongoRest are:
 
-  - `urlPath`: The path were the REST interface is accessible. Defaults to `/`.
-  - `viewPath`: The path were the views to render resources are located.
-  - `viewPrefix`: The prefix of the resource views. Defaults to 'resource_'. So for example a list of users will use the view `resource_users`
+  - `urlPath` The path prefix for the rest resources. Default to `/`
+  - `entityViewTemplate` The template that will be used as view name to render entity reosources. {{singularName}} and {{pluralName}} can be used and will be substituted
+  - `collectionViewTemplate` The template that will be used as view name to render collection reosources. {{singularName}} and {{pluralName}} can be used and will be substituted
+  - `enableXhr` Enables a JSON interface for XMLHttpRequests. Make sure you don't leak important information!
+  - `singleView` Whether there is a single view or not. If not, only the collection view will be used.
 
 As a one liner it looks like this:
 
-    var mongoRest = new (require('mongo-rest'))({ viewPath: 'admin/resources/' });
+    var mongoRest = new (require('mongo-rest'))(app, options);
 
-When instantiated, MongoREST registers the routes with the `app` so that all REST routes become accessible. If you provided `'/resources/'` as `urlPath` then following urls will become alive for the `users` resource:
+When instantiated, MongoREST registers the routes with the `app` so that all REST routes
+become accessible. If you provided `'/resources/'` as `urlPath` then following urls will
+become alive for the `user` resource:
 
     GET: /resources/users (Renders a list of all users)
     POST: /resources/users (Creates a new user)
 
-    GET: /resources/users/id/12345 (Renders the user with ID 12345)
-    PUT: /resources/users/id/12345 (Updates the user with ID 12345)
-    DELETE: /resources/users/id/12345 (Deletes the user with ID 12345)
+    GET: /resources/user/12345 (Renders the user with ID 12345)
+    PUT: /resources/user/12345 (Updates the user with ID 12345)
+    DELETE: /resources/user/12345 (Deletes the user with ID 12345)
 
 ### 2. Adding a mongoose model as resource
 
-To tell `mongo-rest` which resources it should support you simple add each [mongoose model]. Normally you do this in the same place you define your routes. The code is quite straight forward:
+To tell `mongo-rest` which resources it should support you simple add each [mongoose model].
+Normally you do this in the same place you define your routes. The code is quite straight
+forward:
 
-    mongoRest.addResource('users', require('../models/user'));
+    mongoRest.addResource('user', require('../models/user'));
+    // Or for irregular plurals:
+    mongoRest.addResource('hobby', require('../models/user'), 'hobbies');
 
-That's it. Now MongoREST nows that it has to use this model whenever the resource `users` is accessed.
+That's it. Now MongoREST nows that it has to use this model whenever the resource `users` is
+accessed.
+
 
 
 ### 3. Create your views
@@ -71,10 +81,12 @@ Two template files are needed for each resource to...
   1. ...render a list of the resource
   2. ...render a single resource
 
-To define where the views are located you pass the `viewPath` option. If you
-pass `resources_views/` as `viewPath` and `resource_` as `viewPrefix` then
-MongoREST will use `resources_views/resource_users` as view for a list of
-users and `resources_views/resource_users_show` as view for a single user.
+To define where the views are located you specify the `entityViewTemplate` and the
+`collectionViewTemplate` options. If you pass `resources/{{singularName}}` as
+`entityViewTemplate` and `resources/{{pluralName}}` as `collectionViewTemplate` then
+MongoREST will use `resources/user` as view to render a single entity, and `resources/users`
+to render a collection.
+
 
 ### 4. Create interceptors (Optional)
 
@@ -83,11 +95,11 @@ Sometimes some actions need to be taken before or after inserting, updating or d
 You register an interceptor like this:
 
     var eventName = 'post.success'
-      , handler = function(info, req, res, next) { };
+      , handler = function(info, done, req, res, next) { /* Do stuff */ done(); };
 
     mongoRest.addInterceptor('users', eventName, handler);
     // You can also provide the same handler for multiple event names:
-    mongoRest.addInterceptor('users', [ 'post', 'put' ], function() { });
+    mongoRest.addInterceptor('users', [ 'post', 'put' ], handler);
 
 
 The available event names are:
@@ -96,7 +108,8 @@ The available event names are:
   - `put`, `put.success`, `put.error` Called when a resource is updated.
   - `delete`, `delete.success`, `delete.error` Called when a resource is deleted.
 
-If you simply use the event name without `.success` or `.error` it will be called **before** the event will be carried out.
+If you simply use the event name without `.success` or `.error` it will be called **before**
+the event will be carried out.
 
 The parameters provided to the handler are:
 
