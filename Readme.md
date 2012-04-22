@@ -1,6 +1,7 @@
-# MongoREST Version 1.0.3
+# MongoREST Version 2.0.0
 
-This is an [express][] [node][] [module][node modules] to provide basic [REST][] support to access [mongodb][] [documents][mongodb documents] via [mongoose][].
+This is an [express][] [node][] [module][node modules] to provide basic [REST][] support to
+access [mongodb][] [documents][mongodb documents] via [mongoose][].
 
 
 [express]: http://www.expressjs.com/
@@ -12,7 +13,32 @@ This is an [express][] [node][] [module][node modules] to provide basic [REST][]
 [mongoose]: http://www.mongoosejs.com
 
 
-I use [semantic versioning](http://semver.org/) and my [tag script](https://github.com/enyo/tag) to tag this module.
+
+I use [semantic versioning][] and my [tag script][] to tag this module.
+
+The library is fully tested with the [mocha test framework][] and the [should assertion
+library][]. If you contribute please make sure that you write tests for it.
+
+
+[semantic versioning]: http://semver.org/
+[tag script]: https://github.com/enyo/tag
+[mocha test framework]: http://visionmedia.github.com/mocha/
+[should assertion library]: https://github.com/visionmedia/should.js
+
+
+The latest **stable** version is always in the `master` branch. The `develop` branch is
+cuttin edge. Often the tests won't even completely pass. Only checkout the `develop` branch
+if you want to contribute.
+
+
+## Installation
+
+With npm:
+
+    npm install mongo-rest
+
+Or simply download the lates version from here, and put it in node_modules/mongo-rest.
+
 
 ## Usage
 
@@ -35,42 +61,58 @@ MongoREST exposes a class you instatiate with your options. The long version loo
 
 The options for MongoRest are:
 
-  - `urlPath`: The path were the REST interface is accessible. Defaults to `/`.
-  - `viewPath`: The path were the views to render resources are located.
-  - `viewPrefix`: The prefix of the resource views. Defaults to 'resource_'. So for example a list of users will use the view `resource_users`
+  - `urlPath` The path prefix for the rest resources. Default to `/`
+  - `entityViewTemplate` The template that will be used as view name to render entity reosources. {{singularName}} and {{pluralName}} can be used and will be substituted
+  - `collectionViewTemplate` The template that will be used as view name to render collection reosources. {{singularName}} and {{pluralName}} can be used and will be substituted
+  - `enableXhr` Enables a JSON interface for XMLHttpRequests. Make sure you don't leak important information!
+  - `singleView` Whether there is a single view or not. If not, only the collection view will be used.
 
 As a one liner it looks like this:
 
-    var mongoRest = new (require('mongo-rest'))({ viewPath: 'admin/resources/' });
+    var mongoRest = new (require('mongo-rest'))(app, options);
 
-When instantiated, MongoREST registers the routes with the `app` so that all REST routes become accessible. If you provided `'/resources/'` as `urlPath` then following urls will become alive for the `users` resource:
+When instantiated, MongoREST registers the routes with the `app` so that all REST routes
+become accessible. If you provided `'/resources/'` as `urlPath` then following urls will
+become alive for the `user` resource:
 
     GET: /resources/users (Renders a list of all users)
     POST: /resources/users (Creates a new user)
 
-    GET: /resources/users/id/12345 (Renders the user with ID 12345)
-    PUT: /resources/users/id/12345 (Updates the user with ID 12345)
-    DELETE: /resources/users/id/12345 (Deletes the user with ID 12345)
+    GET: /resources/user/12345 (Renders the user with ID 12345)
+    PUT: /resources/user/12345 (Updates the user with ID 12345)
+    DELETE: /resources/user/12345 (Deletes the user with ID 12345)
 
 ### 2. Adding a mongoose model as resource
 
-To tell `mongo-rest` which resources it should support you simple add each [mongoose model]. Normally you do this in the same place you define your routes. The code is quite straight forward:
+To tell `mongo-rest` which resources it should support you simple add each [mongoose model].
+Normally you do this in the same place you define your routes. The code is quite straight
+forward:
 
-    mongoRest.addResource('users', require('../models/user'));
+    mongoRest.addResource('user', require('../models/user'));
+    // Or for irregular plurals:
+    mongoRest.addResource('hobby', require('../models/user'), 'hobbies');
 
-That's it. Now MongoREST nows that it has to use this model whenever the resource `users` is accessed.
+That's it. Now MongoREST nows that it has to use this model whenever the resource `users` is
+accessed.
+
 
 
 ### 3. Create your views
 
-When you access `/resources/users` for example, MongoREST will try to render this list. To do this it will need a template files.
+When you access `/resources/users` for example, MongoREST will try to render
+this list. To do this it will need a template files.
 
 Two template files are needed for each resource to...
 
   1. ...render a list of the resource
   2. ...render a single resource
 
-To define where the views are located you pass the `viewPath` option. If you pass `resources_views/` as `viewPath` and `resource_` as `viewPrefix` then MongoREST will use `resources_views/resource_users` as view for a list of users and `resources_views/resource_users_show` as view for a single user.
+To define where the views are located you specify the `entityViewTemplate` and the
+`collectionViewTemplate` options. If you pass `resources/{{singularName}}` as
+`entityViewTemplate` and `resources/{{pluralName}}` as `collectionViewTemplate` then
+MongoREST will use `resources/user` as view to render a single entity, and `resources/users`
+to render a collection.
+
 
 ### 4. Create interceptors (Optional)
 
@@ -79,11 +121,11 @@ Sometimes some actions need to be taken before or after inserting, updating or d
 You register an interceptor like this:
 
     var eventName = 'post.success'
-      , handler = function(info, req, res, next) { };
+      , handler = function(info, done, req, res, next) { /* Do stuff */ done(); };
 
-    mongoRest.addInterceptor('users', eventName, handler);
+    mongoRest.addInterceptor('user', eventName, handler);
     // You can also provide the same handler for multiple event names:
-    mongoRest.addInterceptor('users', [ 'post', 'put' ], function() { });
+    mongoRest.addInterceptor('users', [ 'post', 'put' ], handler);
 
 
 The available event names are:
@@ -92,13 +134,17 @@ The available event names are:
   - `put`, `put.success`, `put.error` Called when a resource is updated.
   - `delete`, `delete.success`, `delete.error` Called when a resource is deleted.
 
-If you simply use the event name without `.success` or `.error` it will be called **before** the event will be carried out.
+If you simply use the event name without `.success` or `.error` it will be called **before**
+the event will be carried out.
 
 The parameters provided to the handler are:
 
   - `info` An object containing the `doc` and or the `values` that will be used to update the record
+  - `done` A callback that **has to be called** as soon as the interceptor is finished handling the event.
+           (this allows for asynchronous interceptors)
   - `req`
   - `res`
+  - `next`
 
 
 An example of an interceptor could look like this:
@@ -107,7 +153,7 @@ An example of an interceptor could look like this:
      * Intercepts posts and puts for guestbook-messages. It compiles the provided textSource with jade, and stores
      * the old textSource in a textVersions array to provide a history.
      */
-    mongoRest.addInterceptor('guestbook-messages', [ 'post', 'put' ], function(info) {
+    mongoRest.addInterceptor('guestbook-message', [ 'post', 'put' ], function(info, done) {
       // Compile the new textSource value with jade, and put the compiled code in textHtml
       info.values.textHtml = (jade.compile(info.values.textSource))({});
       // Since there is no existing doc when posting a new resource, we test if it exists...
@@ -115,13 +161,42 @@ An example of an interceptor could look like this:
         // ...and if it does we add the old textSource to the textVersions array to have a history.
         info.doc.textVersions.push(info.doc.textSource);
       }
+      // Tell mongoRest that the interceptor finished intercepting the request.
+      done();
     });
 
 
+## XMLHttpRequests
 
-## Tagging
+Mongo-REST supports XMLHttpRequest, but since it could be a security risk, they are disabled by default.
+If you want to enable them simply pass the option `enableXhr`.
 
-I use
+The responses from Mongo-REST for XMLHttpRequests are always JSON and look like this:
+
+    // If everything went right for entities:
+    { doc: doc }
+    // If everything went right for collections:
+    { docs: docs }
+    // If the server would normally redirect:
+    { redirect: "some/url" }
+    // and if there was an error
+    { error: "There was a problem." }
+
+Note that `error` and `redirect` can be submitted simultaniously.
+
+
+# License
+
+License  
+(The MIT License)
+
+Copyright (c) 2012 Matias Meno <m@tias.me>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the 'Software'), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 [mongoose model]: http://mongoosejs.com/docs/model-definition.html
