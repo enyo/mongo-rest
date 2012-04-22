@@ -185,7 +185,7 @@ The responses from Mongo-REST for XMLHttpRequests are always JSON and look like 
 Note that `error` and `redirect` can be submitted simultaniously.
 
 
-# License
+## License
 
 (The MIT License)
 
