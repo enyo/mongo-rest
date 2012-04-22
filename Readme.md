@@ -13,7 +13,32 @@ access [mongodb][] [documents][mongodb documents] via [mongoose][].
 [mongoose]: http://www.mongoosejs.com
 
 
-I use [semantic versioning](http://semver.org/) and my [tag script](https://github.com/enyo/tag) to tag this module.
+
+I use [semantic versioning][] and my [tag script][] to tag this module.
+
+The library is fully tested with the [mocha test framework][] and the [should assertion
+library][]. If you contribute please make sure that you write tests for it.
+
+
+[semantic versioning]: http://semver.org/
+[tag script]: https://github.com/enyo/tag
+[mocha test framework]: http://visionmedia.github.com/mocha/
+[should assertion library]: https://github.com/visionmedia/should.js
+
+
+The latest **stable** version is always in the `master` branch. The `develop` branch is
+cuttin edge. Often the tests won't even completely pass. Only checkout the `develop` branch
+if you want to contribute.
+
+
+## Installation
+
+With npm:
+
+    npm install mongo-rest
+
+Or simply download the lates version from here, and put it in node_modules/mongo-rest.
+
 
 ## Usage
 
@@ -140,6 +165,38 @@ An example of an interceptor could look like this:
       done();
     });
 
+
+## XMLHttpRequests
+
+Mongo-REST supports XMLHttpRequest, but since it could be a security risk, they are disabled by default.
+If you want to enable them simply pass the option `enableXhr`.
+
+The responses from Mongo-REST for XMLHttpRequests are always JSON and look like this:
+
+    // If everything went right for entities:
+    { doc: doc }
+    // If everything went right for collections:
+    { docs: docs }
+    // If the server would normally redirect:
+    { redirect: "some/url" }
+    // and if there was an error
+    { error: "There was a problem." }
+
+Note that `error` and `redirect` can be submitted simultaniously.
+
+
+# License
+
+License  
+(The MIT License)
+
+Copyright (c) 2012 Matias Meno <m@tias.me>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the 'Software'), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 [mongoose model]: http://mongoosejs.com/docs/model-definition.html
