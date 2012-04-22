@@ -206,7 +206,7 @@ describe('MongoRest', function() {
 
       mongoRest.flash("error", "test message", req);
 
-      mongoRest.renderError("Some error", req, res, next);
+      mongoRest.renderError("Some error", null, req, res, next);
     });
     it("should forward to next() if not XHR", function(done) {
       var mongoRest, app = { }
@@ -229,7 +229,7 @@ describe('MongoRest', function() {
 
       mongoRest.flash("error", "test message", req);
 
-      mongoRest.renderError("Some error", req, res, next);
+      mongoRest.renderError("Some error", null, req, res, next);
     });
   });
 

@@ -192,16 +192,14 @@ describe('MongoRest', function() {
         mongoRest.addInterceptor("user", "put.success", interceptor("put.success"));
         mongoRest.addInterceptor("user", "put.error", interceptor("put.error"));
 
-        var res = {
-          redirect: function(address) {
-            address.should.equal("/user/12345");
-            flashs.should.eql([ [ 'error', 'Unable to save the record: Something went wrong' ] ]);
-            interceptorList.should.eql([ "firstPost", "secondPost", "put.error" ]);
-            done();
-          }
-        };
+        mongoRest.renderError = function(err, address, req, res, next) {
+          address.should.equal("/user/12345");
+          flashs.should.eql([ [ 'error', 'Unable to save the record: Something went wrong' ] ]);
+          interceptorList.should.eql([ "firstPost", "secondPost", "put.error" ]);
+          done();
+        }
 
-        mongoRest.entityPut()(req, res, { });
+        mongoRest.entityPut()(req, { }, { });
 
       });
     });
