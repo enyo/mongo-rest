@@ -27,7 +27,7 @@ library][]. If you contribute please make sure that you write tests for it.
 
 
 The latest **stable** version is always in the `master` branch. The `develop` branch is
-cuttin edge where tests regularely won't completely pass. Only checkout the `develop` branch
+cutting edge where tests regularely won't completely pass. Only checkout the `develop` branch
 if you want to contribute.
 
 
