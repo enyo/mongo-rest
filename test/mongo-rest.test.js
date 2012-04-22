@@ -128,5 +128,31 @@ describe('MongoRest', function() {
     });
   })
 
+  describe("redirect()", function() {
+    it("should redirect if not xhr", function(done) {
+      var mongoRest, app = { }
+        , req = {}
+        , res = { redirect: function(address) {
+            address.should.equal("test");
+            done();
+          }}
+        , next = function() { };
+      mongoRest = new MongoRest(app, null, true); // dont register routes
+
+      mongoRest.redirect("test", req, res, next);
+    });
+    it("should return a redirect string if xhr", function(done) {
+      var mongoRest, app = { }
+        , req = { xhr: true }
+        , res = { send: function(obj) {
+            obj.should.eql({ redirect: "test" });
+            done();
+          }}
+        , next = function() { };
+      mongoRest = new MongoRest(app, { enableXhr: true }, true); // dont register routes
+
+      mongoRest.redirect("test", req, res, next);
+    });
+  });
 
 });
