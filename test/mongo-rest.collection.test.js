@@ -84,9 +84,59 @@ describe('MongoRest', function() {
   });
 
   describe("collectionPost()", function() {
-    it("should call the 'post' event interceptors");
-    it("should call the 'post.success' event interceptors on success");
-    it("should call the 'post.error' event interceptors on error");
+    var mongoRest = new MongoRest({ }, null, true) // Don't register routes
+      , doc1 = new function() { this.doc1 = true; }
+      , emptyDoc = { save: function(callback) { setTimeout(callback, 1); } }
+      , req = {
+          model: function() { return emptyDoc; }
+        , body: { newResource: { some: 'values' } }
+        , params: { resource: 'user' }
+      }
+      ;
+
+
+    it("should call the 'post' and 'post.success' event interceptors on success", function(done) {
+      var interceptorList = []
+        , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
+        ;
+
+      mongoRest.addInterceptor("user", "post", interceptor("firstPost"));
+      mongoRest.addInterceptor("user", "post", interceptor("secondPost"));
+      mongoRest.addInterceptor("user", "post.success", interceptor("post.success"));
+
+      var res = {
+        redirect: function() {
+          interceptorList.should.eql([ "firstPost", "secondPost", "post.success" ]);
+          done();
+        }
+      };
+
+      mongoRest.collectionPost()(req, res, { });
+    });
+    it("should call the 'post.error' event interceptors on error", function(done) {
+      var flashMessages = [];
+      req.flash = function(type, message) { flashMessages.push([type, message]); }
+
+      emptyDoc = { save: function(callback) { setTimeout(function() { callback(new Error("Some Error")); }, 1); } }
+
+      var interceptorList = []
+        , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
+        ;
+
+      mongoRest.addInterceptor("user", "post", interceptor("firstPost"));
+      mongoRest.addInterceptor("user", "post", interceptor("secondPost"));
+      mongoRest.addInterceptor("user", "post.error", interceptor("post.error"));
+
+      var res = {
+        redirect: function() {
+          interceptorList.should.eql([ "firstPost", "secondPost", "post.error" ]);
+          flashMessages.should.eql([ ['error', 'Error: Some Error'] ]);
+          done();
+        }
+      };
+
+      mongoRest.collectionPost()(req, res, { });
+    });
   });
 
 
