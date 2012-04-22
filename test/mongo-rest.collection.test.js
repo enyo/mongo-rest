@@ -5,7 +5,64 @@ var MongoRest = require('../lib/index')
 describe('MongoRest', function() {
 
   describe("renderCollection()", function() {
-    it('should render a collection correctly depending on the request');
+    it('should render a collection correctly depending on the request', function() {
+      var sentDocs;
+      var renderedView, renderedInfo;
+
+      var mongoRest
+        , req = {
+            xhr: true,
+            params: {
+              resource: 'user'
+            }
+          }
+        , res = {
+              send: function(docs) { sentDocs = docs }
+            , render: function(view, info) { renderedView = view; renderedInfo = info; }
+          }
+        , next = function() { }
+        , doc1 = new function() { this.doc1 = true }
+        , doc2 = new function() { this.doc2 = true }
+        , docs = [ doc1, doc2 ]
+        ;
+
+
+
+      // enableXhr is false by default.
+      sentDocs = renderedView = renderedInfo = null;
+
+      mongoRest = new MongoRest({ }, { viewPath: 'resource_views/', viewPrefix: 'my_lovely_resource_' }, true); // Don't register routes
+      mongoRest.renderCollection(docs, req, res, next);
+
+      (sentDocs === null).should.be.true;
+      renderedView.should.eql("resource_views/my_lovely_resource_user");
+      renderedInfo.should.eql({ docs: docs, site: 'user-list' });
+
+
+
+      // Set enableXhr to true
+      sentDocs = renderedView = renderedInfo = null;
+
+      mongoRest = new MongoRest({ }, { enableXhr: true, viewPath: 'resource_views/', viewPrefix: 'my_lovely_resource_' }, true); // Don't register routes
+      mongoRest.renderCollection(docs, req, res, next);
+
+      sentDocs.should.eql({ docs: docs });
+      (renderedView === null).should.be.true;
+      (renderedInfo === null).should.be.true;
+
+
+      // Set enableXhr to true but the request is not xhr.
+      sentDocs = renderedView = renderedInfo = null;
+
+      mongoRest = new MongoRest({ }, { viewPath: 'resource_views/', viewPrefix: 'my_lovely_resource_' }, true); // Don't register routes
+      req.xhr = false;
+      mongoRest.renderCollection(docs, req, res, next);
+
+      (sentDocs === null).should.be.true;
+      renderedView.should.eql("resource_views/my_lovely_resource_user");
+      renderedInfo.should.eql({ docs: docs, site: 'user-list' });
+
+    });
   });
 
   describe('collectionGet()', function() {
