@@ -49,7 +49,7 @@ describe('MongoRest', function() {
       mongoRest = new MongoRest({ }, { enableXhr: true, entityViewTemplate: 'resources/{{singularName}}', collectionViewTemplate: 'resources/{{pluralName}}' }, true); // Don't register routes
       mongoRest.renderCollection(docs, req, res, next);
 
-      sentDocs.should.eql({ docs: docs, messages: req.tmpFlashs });
+      sentDocs.should.eql({ docs: docs });
       (renderedView === null).should.be.true;
       (renderedInfo === null).should.be.true;
 
@@ -152,6 +152,7 @@ describe('MongoRest', function() {
           body: { newResource: { some: 'values' } }
         , resource: { singularName: 'user', pluralName: 'users', model: function() { return emptyDoc; } }
         , params: { resourceName: 'user' }
+        , flash: function() { }
       }
       ;
 
@@ -179,8 +180,7 @@ describe('MongoRest', function() {
       mongoRest.collectionPost()(req, res, { });
     });
     it("should call the 'post.error' event interceptors on error", function(done) {
-      var flashMessages = [];
-      mongoRest.flash = function(type, message) { flashMessages.push([type, message]); }
+      mongoRest.flash = function(type, message) { true.should.be.false; }
 
       emptyDoc = { save: function(callback) { setTimeout(function() { callback(new Error("Some Error")); }, 1); } }
 
@@ -195,9 +195,9 @@ describe('MongoRest', function() {
 
 
       mongoRest.renderError = function(err, address, req, res, next) {
+        err.message.should.equal("Unable to insert the record: Some Error");
         address.should.equal("/users");
         interceptorList.should.eql([ "firstPost", "secondPost", "post.error" ]);
-        flashMessages.should.eql([ ['error', 'Error: Some Error'] ]);
         done();
       };
 

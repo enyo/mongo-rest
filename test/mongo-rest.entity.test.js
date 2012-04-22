@@ -46,12 +46,10 @@ describe('MongoRest', function() {
       // Set enableXhr to true
       sentDoc = renderedView = renderedInfo = null;
 
-      req.tmpFlashs = [ { type: "error", msg: "hi" } ];
-
       mongoRest = new MongoRest({ }, { enableXhr: true, entityViewTemplate: "resource_views/my_lovely_resource_{{singularName}}_show" }, true); // Don't register routes
       mongoRest.renderEntity(doc, req, res, next);
 
-      sentDoc.should.eql({ doc: doc, messages: req.tmpFlashs });
+      sentDoc.should.eql({ doc: doc });
       (renderedView === null).should.be.true;
       (renderedInfo === null).should.be.true;
 
@@ -179,9 +177,8 @@ describe('MongoRest', function() {
 
       });
       it("should call the 'put.error' event interceptors on error", function(done) {
-        error = new Error("Something went wrong");
-        var flashs = [];
-        mongoRest.flash = function(type, message) { flashs.push([type, message]) };
+        error = new Error("Something went wrong1");
+        mongoRest.flash = function(type, message) { false.should.be.true; }; // Should not happen.
 
         var interceptorList = []
           , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
@@ -193,8 +190,8 @@ describe('MongoRest', function() {
         mongoRest.addInterceptor("user", "put.error", interceptor("put.error"));
 
         mongoRest.renderError = function(err, address, req, res, next) {
+          err.message.should.equal("Unable to save the record: Something went wrong1");
           address.should.equal("/user/12345");
-          flashs.should.eql([ [ 'error', 'Unable to save the record: Something went wrong' ] ]);
           interceptorList.should.eql([ "firstPost", "secondPost", "put.error" ]);
           done();
         }
@@ -233,9 +230,8 @@ describe('MongoRest', function() {
 
       });
       it("should call the 'delete.error' event interceptors on error", function(done) {
-        error = new Error("Something went wrong");
-        var flashs = [];
-        mongoRest.flash = function(type, message) { flashs.push([type, message]) };
+        error = new Error("Something went wrong2");
+        mongoRest.flash = function(type, message) { true.should.be.false; };
 
         var interceptorList = []
           , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
@@ -246,16 +242,16 @@ describe('MongoRest', function() {
         mongoRest.addInterceptor("user", "delete.success", interceptor("delete.success"));
         mongoRest.addInterceptor("user", "delete.error", interceptor("delete.error"));
 
-        var res = {
-          redirect: function(address) {
-            address.should.equal("/users");
-            flashs.should.eql([ [ 'error', 'Unable to delete the record: Something went wrong' ] ]);
-            interceptorList.should.eql([ "firstPost", "secondPost", "delete.error" ]);
-            done();
-          }
+
+        mongoRest.renderError = function(err, address, req, res, next) {
+          err.message.should.equal("Unable to delete the record: Something went wrong2");
+          address.should.equal("/users");
+          interceptorList.should.eql([ "firstPost", "secondPost", "delete.error" ]);
+          done();
         };
 
-        mongoRest.entityDelete()(req, res, { });
+
+        mongoRest.entityDelete()(req, { }, { });
 
       });
     });

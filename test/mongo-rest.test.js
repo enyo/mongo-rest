@@ -157,16 +157,18 @@ describe('MongoRest', function() {
 
 
   describe("flash()", function() {
-    it("should store the message in the req object if xhr", function() {
+    it("should do nothing if xhr", function() {
       var mongoRest, app = { }
-        , req = { xhr: true }
+        , req = {
+          xhr: true,
+          flash: function() { true.should.be.false; }
+        }
         ;
+
       mongoRest = new MongoRest(app, { enableXhr: true }, true); // dont register routes
 
       mongoRest.flash("error", "hi", req);
       mongoRest.flash("success", "hi2", req);
-
-      req.tmpFlashs.should.eql([ { type: "error", msg: "hi" }, { type: "success", msg: "hi2" } ]);
 
     });
     it("should forward to req.flash() directly if not xhr.", function(done) {
@@ -189,11 +191,11 @@ describe('MongoRest', function() {
 
 
   describe("renderError()", function() {
-    it("should send the error and flash messages if XHR", function(done) {
+    it("should send the error without flash message if XHR", function(done) {
       var mongoRest, app = { }
         , res = {
             send: function(info) {
-              info.should.eql({ error: 'Some error', redirect: "some/url", messages: [ { type: "error", msg: "test message" } ] });
+              info.should.eql({ error: 'Some error', redirect: "some/url" });
               done();
             }
           }
