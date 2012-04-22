@@ -46,10 +46,12 @@ describe('MongoRest', function() {
       // Set enableXhr to true
       sentDoc = renderedView = renderedInfo = null;
 
+      req.tmpFlashs = [ { type: "error", msg: "hi" } ];
+
       mongoRest = new MongoRest({ }, { enableXhr: true, entityViewTemplate: "resource_views/my_lovely_resource_{{singularName}}_show" }, true); // Don't register routes
       mongoRest.renderEntity(doc, req, res, next);
 
-      sentDoc.should.eql({ doc: doc });
+      sentDoc.should.eql({ doc: doc, messages: req.tmpFlashs });
       (renderedView === null).should.be.true;
       (renderedInfo === null).should.be.true;
 
@@ -153,7 +155,7 @@ describe('MongoRest', function() {
       it("should call the 'put' and 'put.success' event interceptors on success", function(done) {
         error = null;
         var flashs = [];
-        req.flash = function(type, message) { flashs.push([type, message]) };
+        mongoRest.flash = function(type, message) { flashs.push([type, message]) };
 
         var interceptorList = []
           , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
@@ -179,7 +181,7 @@ describe('MongoRest', function() {
       it("should call the 'put.error' event interceptors on error", function(done) {
         error = new Error("Something went wrong");
         var flashs = [];
-        req.flash = function(type, message) { flashs.push([type, message]) };
+        mongoRest.flash = function(type, message) { flashs.push([type, message]) };
 
         var interceptorList = []
           , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
@@ -209,7 +211,7 @@ describe('MongoRest', function() {
       it("should call the 'delete' and 'delete.success' event interceptors on success", function(done) {
         error = null;
         var flashs = [];
-        req.flash = function(type, message) { flashs.push([type, message]) };
+        mongoRest.flash = function(type, message) { flashs.push([type, message]) };
 
         var interceptorList = []
           , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
@@ -235,7 +237,7 @@ describe('MongoRest', function() {
       it("should call the 'delete.error' event interceptors on error", function(done) {
         error = new Error("Something went wrong");
         var flashs = [];
-        req.flash = function(type, message) { flashs.push([type, message]) };
+        mongoRest.flash = function(type, message) { flashs.push([type, message]) };
 
         var interceptorList = []
           , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }

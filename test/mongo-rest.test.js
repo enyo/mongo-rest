@@ -155,4 +155,82 @@ describe('MongoRest', function() {
     });
   });
 
+
+  describe("flash()", function() {
+    it("should store the message in the req object if xhr", function() {
+      var mongoRest, app = { }
+        , req = { xhr: true }
+        ;
+      mongoRest = new MongoRest(app, { enableXhr: true }, true); // dont register routes
+
+      mongoRest.flash("error", "hi", req);
+      mongoRest.flash("success", "hi2", req);
+
+      req.tmpFlashs.should.eql([ { type: "error", msg: "hi" }, { type: "success", msg: "hi2" } ]);
+
+    });
+    it("should forward to req.flash() directly if not xhr.", function(done) {
+      var mongoRest, app = { }
+        , req = {
+            xhr: true,
+            flash: function(type, msg) {
+              type.should.equal("error");
+              msg.should.equal("some message");
+              done();
+            }
+          }
+        ;
+      mongoRest = new MongoRest(app, { enableXhr: false }, true); // dont register routes
+
+      mongoRest.flash("error", "some message", req);
+
+    });
+  });
+
+
+  describe("renderError()", function() {
+    it("should send the error and flash messages if XHR", function(done) {
+      var mongoRest, app = { }
+        , res = {
+            send: function(info) {
+              info.should.eql({ error: 'Some error', messages: [ { type: "error", msg: "test message" } ] });
+              done();
+            }
+          }
+        , req = {
+            xhr: true
+          }
+        , next = function() { }
+        ;
+      mongoRest = new MongoRest(app, { enableXhr: true }, true); // dont register routes
+
+      mongoRest.flash("error", "test message", req);
+
+      mongoRest.renderError("Some error", req, res, next);
+    });
+    it("should forward to next() if not XHR", function(done) {
+      var mongoRest, app = { }
+        , res = {
+          }
+        , flashed = []
+        , req = {
+            xhr: true,
+            flash: function(type, msg) {
+              flashed.push([type, msg]);
+            }
+          }
+        , next = function(err) {
+            flashed.should.eql([ ["error", "test message"] ]);
+            err.should.eql("Some error");
+            done();
+          }
+        ;
+      mongoRest = new MongoRest(app, { enableXhr: false }, true); // dont register routes
+
+      mongoRest.flash("error", "test message", req);
+
+      mongoRest.renderError("Some error", req, res, next);
+    });
+  });
+
 });

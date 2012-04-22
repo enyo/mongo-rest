@@ -44,10 +44,12 @@ describe('MongoRest', function() {
       // Set enableXhr to true
       sentDocs = renderedView = renderedInfo = null;
 
+      req.tmpFlashs = [ { type: "error", msg: "hi" } ];
+
       mongoRest = new MongoRest({ }, { enableXhr: true, entityViewTemplate: 'resources/{{singularName}}', collectionViewTemplate: 'resources/{{pluralName}}' }, true); // Don't register routes
       mongoRest.renderCollection(docs, req, res, next);
 
-      sentDocs.should.eql({ docs: docs });
+      sentDocs.should.eql({ docs: docs, messages: req.tmpFlashs });
       (renderedView === null).should.be.true;
       (renderedInfo === null).should.be.true;
 
@@ -178,7 +180,7 @@ describe('MongoRest', function() {
     });
     it("should call the 'post.error' event interceptors on error", function(done) {
       var flashMessages = [];
-      req.flash = function(type, message) { flashMessages.push([type, message]); }
+      mongoRest.flash = function(type, message) { flashMessages.push([type, message]); }
 
       emptyDoc = { save: function(callback) { setTimeout(function() { callback(new Error("Some Error")); }, 1); } }
 
