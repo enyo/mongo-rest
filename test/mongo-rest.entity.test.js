@@ -12,8 +12,13 @@ describe('MongoRest', function() {
       var mongoRest
         , req = {
             xhr: true,
+            resource: {
+              singularName: 'user',
+              pluralName: 'users',
+              model: function() { }
+            },
             params: {
-              resource: 'user'
+              resourceName: 'user'
             }
           }
         , res = {
@@ -29,7 +34,7 @@ describe('MongoRest', function() {
       // enableXhr is false by default.
       sentDoc = renderedView = renderedInfo = null;
 
-      mongoRest = new MongoRest({ }, { viewPath: 'resource_views/', viewPrefix: 'my_lovely_resource_' }, true); // Don't register routes
+      mongoRest = new MongoRest({ }, { entityViewTemplate: "resource_views/my_lovely_resource_{{singularName}}_show" }, true); // Don't register routes
       mongoRest.renderEntity(doc, req, res, next);
 
       (sentDoc === null).should.be.true;
@@ -41,7 +46,7 @@ describe('MongoRest', function() {
       // Set enableXhr to true
       sentDoc = renderedView = renderedInfo = null;
 
-      mongoRest = new MongoRest({ }, { enableXhr: true, viewPath: 'resource_views/', viewPrefix: 'my_lovely_resource_' }, true); // Don't register routes
+      mongoRest = new MongoRest({ }, { enableXhr: true, entityViewTemplate: "resource_views/my_lovely_resource_{{singularName}}_show" }, true); // Don't register routes
       mongoRest.renderEntity(doc, req, res, next);
 
       sentDoc.should.eql({ doc: doc });
@@ -52,7 +57,7 @@ describe('MongoRest', function() {
       // Set enableXhr to true but the request is not xhr.
       sentDoc = renderedView = renderedInfo = null;
 
-      mongoRest = new MongoRest({ }, { viewPath: 'resource_views/', viewPrefix: 'my_lovely_resource_' }, true); // Don't register routes
+      mongoRest = new MongoRest({ }, { entityViewTemplate: "resource_views/my_lovely_resource_{{singularName}}_show" }, true); // Don't register routes
       req.xhr = false;
       mongoRest.renderEntity(doc, req, res, next);
 
@@ -66,7 +71,7 @@ describe('MongoRest', function() {
 
   describe('entityGet()', function() {
     var mongoRest = new MongoRest({ }, null, true) // Don't register routes
-      , req = { model: { }, doc: new function() { this.doc = true; }, params: { resource: 'user' } };
+      , req = { resource: { }, doc: new function() { this.doc = true; }, params: { resourceName: 'user' } };
 
     it("should directly render if there are no interceptors", function(done) {
       mongoRest.renderEntity = function(doc) {

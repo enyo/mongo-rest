@@ -7,9 +7,6 @@ var MongoRest = require('../lib/index')
 
 describe('MongoRest interceptors', function() {
 
-  // TODOs
-  it('should call the apropriate interceptors for all actions');
-
   describe("addInterceptor()", function() {
     it("should handle calss with a string as event", function() {
       var mongoRest = new MongoRest({ }, null, true); // dont register routes
@@ -68,7 +65,7 @@ describe('MongoRest interceptors', function() {
       mongoRest.invokeInterceptors('users', 'get', { doc: { } }, req, res, next, function() { done(); });
     });
 
-    it('should actually invoke the "get" interceptors with each doc when "-collection-get" is invoked', function(done) {
+    it('should actually invoke the "get" interceptors with each doc when "collection-get" is invoked', function(done) {
       var called = 0
         , doc1 = new function() { }
         , doc2 = new function() { }

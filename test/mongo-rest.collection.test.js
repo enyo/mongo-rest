@@ -12,8 +12,9 @@ describe('MongoRest', function() {
       var mongoRest
         , req = {
             xhr: true,
+            resource: { singularName: 'user', pluralName: 'users', model: { }},
             params: {
-              resource: 'user'
+              resourceName: 'user'
             }
           }
         , res = {
@@ -31,11 +32,11 @@ describe('MongoRest', function() {
       // enableXhr is false by default.
       sentDocs = renderedView = renderedInfo = null;
 
-      mongoRest = new MongoRest({ }, { viewPath: 'resource_views/', viewPrefix: 'my_lovely_resource_' }, true); // Don't register routes
+      mongoRest = new MongoRest({ }, { entityViewTemplate: 'resources/{{singularName}}', collectionViewTemplate: 'resources/{{pluralName}}' }, true); // Don't register routes
       mongoRest.renderCollection(docs, req, res, next);
 
       (sentDocs === null).should.be.true;
-      renderedView.should.eql("resource_views/my_lovely_resource_user");
+      renderedView.should.eql("resources/users");
       renderedInfo.should.eql({ docs: docs, site: 'user-list' });
 
 
@@ -43,7 +44,7 @@ describe('MongoRest', function() {
       // Set enableXhr to true
       sentDocs = renderedView = renderedInfo = null;
 
-      mongoRest = new MongoRest({ }, { enableXhr: true, viewPath: 'resource_views/', viewPrefix: 'my_lovely_resource_' }, true); // Don't register routes
+      mongoRest = new MongoRest({ }, { enableXhr: true, entityViewTemplate: 'resources/{{singularName}}', collectionViewTemplate: 'resources/{{pluralName}}' }, true); // Don't register routes
       mongoRest.renderCollection(docs, req, res, next);
 
       sentDocs.should.eql({ docs: docs });
@@ -54,12 +55,12 @@ describe('MongoRest', function() {
       // Set enableXhr to true but the request is not xhr.
       sentDocs = renderedView = renderedInfo = null;
 
-      mongoRest = new MongoRest({ }, { viewPath: 'resource_views/', viewPrefix: 'my_lovely_resource_' }, true); // Don't register routes
+      mongoRest = new MongoRest({ }, { entityViewTemplate: 'resources/{{singularName}}', collectionViewTemplate: 'resources/{{pluralName}}' }, true); // Don't register routes
       req.xhr = false;
       mongoRest.renderCollection(docs, req, res, next);
 
       (sentDocs === null).should.be.true;
-      renderedView.should.eql("resource_views/my_lovely_resource_user");
+      renderedView.should.eql("resources/users");
       renderedInfo.should.eql({ docs: docs, site: 'user-list' });
 
     });
@@ -70,7 +71,6 @@ describe('MongoRest', function() {
       , doc1 = new function() { this.doc1 = true; }
       , doc2 = new function() { this.doc2 = true; }
       , initialDocs = [ doc1, doc2 ]
-      , req = { model: { }, params: { resource: 'user' } }
       , run = function(callback) {
           callback(null, initialDocs);
         }
@@ -79,6 +79,7 @@ describe('MongoRest', function() {
           , sort: function() { return model; }
           , run: run
         }
+      , req = { model: { }, resource: { singularName: 'user', pluralName: 'users', model: model }, params: { resourceName: 'user' } }
       ;
 
     req.model = model;
@@ -145,9 +146,9 @@ describe('MongoRest', function() {
       , doc1 = new function() { this.doc1 = true; }
       , emptyDoc = { save: function(callback) { setTimeout(callback, 1); } }
       , req = {
-          model: function() { return emptyDoc; }
-        , body: { newResource: { some: 'values' } }
-        , params: { resource: 'user' }
+          body: { newResource: { some: 'values' } }
+        , resource: { singularName: 'user', pluralName: 'users', model: function() { return emptyDoc; } }
+        , params: { resourceName: 'user' }
       }
       ;
 
