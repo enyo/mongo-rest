@@ -143,7 +143,6 @@ describe('MongoRest', function() {
 
   describe("collectionPost()", function() {
     var mongoRest = new MongoRest({ }, null, true) // Don't register routes
-      , doc1 = new function() { this.doc1 = true; }
       , emptyDoc = { save: function(callback) { setTimeout(callback, 1); } }
       , req = {
           body: { newResource: { some: 'values' } }
@@ -161,9 +160,11 @@ describe('MongoRest', function() {
       mongoRest.addInterceptor("user", "post", interceptor("firstPost"));
       mongoRest.addInterceptor("user", "post", interceptor("secondPost"));
       mongoRest.addInterceptor("user", "post.success", interceptor("post.success"));
+      mongoRest.addInterceptor("user", "post.error", interceptor("post.error"));
 
       var res = {
-        redirect: function() {
+        redirect: function(address) {
+          address.should.equal("/users");
           interceptorList.should.eql([ "firstPost", "secondPost", "post.success" ]);
           done();
         }
@@ -183,10 +184,12 @@ describe('MongoRest', function() {
 
       mongoRest.addInterceptor("user", "post", interceptor("firstPost"));
       mongoRest.addInterceptor("user", "post", interceptor("secondPost"));
+      mongoRest.addInterceptor("user", "post.success", interceptor("post.success"));
       mongoRest.addInterceptor("user", "post.error", interceptor("post.error"));
 
       var res = {
-        redirect: function() {
+        redirect: function(address) {
+          address.should.equal("/users");
           interceptorList.should.eql([ "firstPost", "secondPost", "post.error" ]);
           flashMessages.should.eql([ ['error', 'Error: Some Error'] ]);
           done();
