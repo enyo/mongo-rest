@@ -69,8 +69,35 @@ describe('MongoRest', function() {
       mongoRest = new MongoRest(app, null, true); // dont register routes
 
       mongoRest.parseViewTemplate("abc.{{singularName}}.def.{{pluralName}}", { singularName: 'user', pluralName: 'users' }).should.equal("abc.user.def.users")
-
     });
   });
+
+  describe("getCollectionUrl()", function() {
+    it("should return the correct url", function() {
+      var mongoRest, app = { };
+
+      mongoRest = new MongoRest(app, { urlPath: "/resource/" }, true); // dont register routes
+      mongoRest.getCollectionUrl({ singularName: 'user', pluralName: 'users' }).should.equal("/resource/users");
+
+    });
+  })
+
+  describe("getEntityUrl()", function() {
+    it("should return the correct url", function() {
+      var mongoRest, app = { };
+
+      mongoRest = new MongoRest(app, { urlPath: "/resource/", singleView: true }, true); // dont register routes
+      mongoRest.getEntityUrl({ singularName: 'user', pluralName: 'users' }, { _id: 123 }).should.equal("/resource/user/123");
+
+    });
+    it("should return the colleciton url if no single view", function() {
+      var mongoRest, app = { };
+
+      mongoRest = new MongoRest(app, { urlPath: "/resource/", singleView: false }, true); // dont register routes
+      mongoRest.getEntityUrl({ singularName: 'user', pluralName: 'users' }, { _id: 123 }).should.equal("/resource/users");
+
+    });
+  })
+
 
 });
