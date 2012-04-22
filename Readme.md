@@ -63,14 +63,18 @@ That's it. Now MongoREST nows that it has to use this model whenever the resourc
 
 ### 3. Create your views
 
-When you access `/resources/users` for example, MongoREST will try to render this list. To do this it will need a template files.
+When you access `/resources/users` for example, MongoREST will try to render
+this list. To do this it will need a template files.
 
 Two template files are needed for each resource to...
 
   1. ...render a list of the resource
   2. ...render a single resource
 
-To define where the views are located you pass the `viewPath` option. If you pass `resources_views/` as `viewPath` and `resource_` as `viewPrefix` then MongoREST will use `resources_views/resource_users` as view for a list of users and `resources_views/resource_users_show` as view for a single user.
+To define where the views are located you pass the `viewPath` option. If you
+pass `resources_views/` as `viewPath` and `resource_` as `viewPrefix` then
+MongoREST will use `resources_views/resource_users` as view for a list of
+users and `resources_views/resource_users_show` as view for a single user.
 
 ### 4. Create interceptors (Optional)
 
@@ -97,8 +101,11 @@ If you simply use the event name without `.success` or `.error` it will be calle
 The parameters provided to the handler are:
 
   - `info` An object containing the `doc` and or the `values` that will be used to update the record
+  - `done` A callback that **has to be called** as soon as the interceptor is finished handling the event.
+           (this allows for asynchronous interceptors)
   - `req`
   - `res`
+  - `next`
 
 
 An example of an interceptor could look like this:
@@ -107,7 +114,7 @@ An example of an interceptor could look like this:
      * Intercepts posts and puts for guestbook-messages. It compiles the provided textSource with jade, and stores
      * the old textSource in a textVersions array to provide a history.
      */
-    mongoRest.addInterceptor('guestbook-messages', [ 'post', 'put' ], function(info) {
+    mongoRest.addInterceptor('guestbook-messages', [ 'post', 'put' ], function(info, done) {
       // Compile the new textSource value with jade, and put the compiled code in textHtml
       info.values.textHtml = (jade.compile(info.values.textSource))({});
       // Since there is no existing doc when posting a new resource, we test if it exists...
@@ -115,13 +122,10 @@ An example of an interceptor could look like this:
         // ...and if it does we add the old textSource to the textVersions array to have a history.
         info.doc.textVersions.push(info.doc.textSource);
       }
+      // Tell mongoRest that the interceptor finished intercepting the request.
+      done();
     });
 
-
-
-## Tagging
-
-I use
 
 
 [mongoose model]: http://mongoosejs.com/docs/model-definition.html
