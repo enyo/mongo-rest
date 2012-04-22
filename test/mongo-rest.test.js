@@ -193,7 +193,7 @@ describe('MongoRest', function() {
       var mongoRest, app = { }
         , res = {
             send: function(info) {
-              info.should.eql({ error: 'Some error', messages: [ { type: "error", msg: "test message" } ] });
+              info.should.eql({ error: 'Some error', redirect: "some/url", messages: [ { type: "error", msg: "test message" } ] });
               done();
             }
           }
@@ -206,7 +206,7 @@ describe('MongoRest', function() {
 
       mongoRest.flash("error", "test message", req);
 
-      mongoRest.renderError("Some error", null, req, res, next);
+      mongoRest.renderError(new Error("Some error"), "some/url", req, res, next);
     });
     it("should forward to next() if not XHR", function(done) {
       var mongoRest, app = { }

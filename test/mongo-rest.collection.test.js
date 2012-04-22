@@ -193,16 +193,15 @@ describe('MongoRest', function() {
       mongoRest.addInterceptor("user", "post.success", interceptor("post.success"));
       mongoRest.addInterceptor("user", "post.error", interceptor("post.error"));
 
-      var res = {
-        redirect: function(address) {
-          address.should.equal("/users");
-          interceptorList.should.eql([ "firstPost", "secondPost", "post.error" ]);
-          flashMessages.should.eql([ ['error', 'Error: Some Error'] ]);
-          done();
-        }
+
+      mongoRest.renderError = function(err, address, req, res, next) {
+        address.should.equal("/users");
+        interceptorList.should.eql([ "firstPost", "secondPost", "post.error" ]);
+        flashMessages.should.eql([ ['error', 'Error: Some Error'] ]);
+        done();
       };
 
-      mongoRest.collectionPost()(req, res, { });
+      mongoRest.collectionPost()(req, { }, { });
     });
   });
 
