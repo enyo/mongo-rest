@@ -18,7 +18,36 @@ describe('MongoRest', function() {
 
     });
 
-    it("should register routes if asked nicely");
+    describe("routes", function() {
+      var mongoRest
+        , registered
+        , app = {
+              all: function(address) { registered.push([ 'all', address ]) }
+            , get: function(address) { registered.push([ 'get', address ]) }
+            , post: function(address) { registered.push([ 'post', address ]) }
+            , put: function(address) { registered.push([ 'put', address ]) }
+            , delete: function(address) { registered.push([ 'delete', address ]) }
+          };
+      it("should register routes if asked nicely", function() {
+        registered = [];
+        mongoRest = new MongoRest(app, { urlPath: '/some/url/' });
+        registered.should.eql([
+          [ 'all', '/some/url/:resourceName' ],
+          [ 'get', '/some/url/:resourceName' ],
+          [ 'post', '/some/url/:resourceName' ],
+          [ 'all', '/some/url/:resourceName/:id' ],
+          [ 'get', '/some/url/:resourceName/:id' ],
+          [ 'put', '/some/url/:resourceName/:id' ],
+          [ 'delete', '/some/url/:resourceName/:id' ] 
+        ]);
+      });
+
+      it("shouldn't register routes if asked nicely", function() {
+        registered = [];
+        mongoRest = new MongoRest(app, { urlPath: '/some/url/' }, true); // Don't register routes.
+        registered.should.eql([]);
+      });
+    });
 
   });
 
