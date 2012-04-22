@@ -27,7 +27,7 @@ library][]. If you contribute please make sure that you write tests for it.
 
 
 The latest **stable** version is always in the `master` branch. The `develop` branch is
-cuttin edge. Often the tests won't even completely pass. Only checkout the `develop` branch
+cuttin edge where tests regularely won't completely pass. Only checkout the `develop` branch
 if you want to contribute.
 
 
@@ -37,7 +37,7 @@ With npm:
 
     npm install mongo-rest
 
-Or simply download the lates version from here, and put it in node_modules/mongo-rest.
+Or simply download the lates version from here, and put it in `node_modules/mongo-rest`.
 
 
 ## Usage
@@ -62,9 +62,9 @@ MongoREST exposes a class you instatiate with your options. The long version loo
 The options for MongoRest are:
 
   - `urlPath` The path prefix for the rest resources. Default to `/`
-  - `entityViewTemplate` The template that will be used as view name to render entity reosources. {{singularName}} and {{pluralName}} can be used and will be substituted
-  - `collectionViewTemplate` The template that will be used as view name to render collection reosources. {{singularName}} and {{pluralName}} can be used and will be substituted
-  - `enableXhr` Enables a JSON interface for XMLHttpRequests. Make sure you don't leak important information!
+  - `entityViewTemplate` The template that will be used as view name to render entity resources. `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
+  - `collectionViewTemplate` The template that will be used as view name to render collection resources. `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
+  - `enableXhr` Enables a JSON interface for XMLHttpRequests. **Make sure you don't leak important information!**
   - `singleView` Whether there is a single view or not. If not, only the collection view will be used.
 
 As a one liner it looks like this:
