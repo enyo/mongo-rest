@@ -1,6 +1,7 @@
 # MongoREST Version 1.0.4-dev
 
-This is an [express][] [node][] [module][node modules] to provide basic [REST][] support to access [mongodb][] [documents][mongodb documents] via [mongoose][].
+This is an [express][] [node][] [module][node modules] to provide basic [REST][] support to
+access [mongodb][] [documents][mongodb documents] via [mongoose][].
 
 
 [express]: http://www.expressjs.com/
