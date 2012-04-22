@@ -5,7 +5,62 @@ var MongoRest = require('../lib/index')
 describe('MongoRest', function() {
 
   describe("renderEntity()", function() {
-    it('should render an entity correctly depending on the request');
+    it('should render a collection correctly depending on the request', function() {
+      var sentDoc;
+      var renderedView, renderedInfo;
+
+      var mongoRest
+        , req = {
+            xhr: true,
+            params: {
+              resource: 'user'
+            }
+          }
+        , res = {
+              send: function(doc) { sentDoc = doc }
+            , render: function(view, info) { renderedView = view; renderedInfo = info; }
+          }
+        , next = function() { }
+        , doc = new function() { this.doc = true }
+        ;
+
+
+
+      // enableXhr is false by default.
+      sentDoc = renderedView = renderedInfo = null;
+
+      mongoRest = new MongoRest({ }, { viewPath: 'resource_views/', viewPrefix: 'my_lovely_resource_' }, true); // Don't register routes
+      mongoRest.renderEntity(doc, req, res, next);
+
+      (sentDoc === null).should.be.true;
+      renderedView.should.eql("resource_views/my_lovely_resource_user_show");
+      renderedInfo.should.eql({ doc: doc, site: 'user-show' });
+
+
+
+      // Set enableXhr to true
+      sentDoc = renderedView = renderedInfo = null;
+
+      mongoRest = new MongoRest({ }, { enableXhr: true, viewPath: 'resource_views/', viewPrefix: 'my_lovely_resource_' }, true); // Don't register routes
+      mongoRest.renderEntity(doc, req, res, next);
+
+      sentDoc.should.eql({ doc: doc });
+      (renderedView === null).should.be.true;
+      (renderedInfo === null).should.be.true;
+
+
+      // Set enableXhr to true but the request is not xhr.
+      sentDoc = renderedView = renderedInfo = null;
+
+      mongoRest = new MongoRest({ }, { viewPath: 'resource_views/', viewPrefix: 'my_lovely_resource_' }, true); // Don't register routes
+      req.xhr = false;
+      mongoRest.renderEntity(doc, req, res, next);
+
+      (sentDoc === null).should.be.true;
+      renderedView.should.eql("resource_views/my_lovely_resource_user_show");
+      renderedInfo.should.eql({ doc: doc, site: 'user-show' });
+
+    });
   });
 
 
