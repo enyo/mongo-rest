@@ -189,7 +189,7 @@ Note that `error` and `redirect` can be submitted simultaniously.
 
 (The MIT License)
 
-Copyright (c) 2012 Matias Meno &ltm@tias.me&gt;
+Copyright (c) 2012 Matias Meno &lt;m@tias.me&gt;
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this
 software and associated documentation files (the 'Software'), to deal in the Software
