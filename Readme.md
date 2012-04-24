@@ -91,9 +91,11 @@ forward:
     mongoRest.addResource('user', require('../models/user'));
     // Or for irregular plurals:
     mongoRest.addResource('hobby', require('../models/user'), 'hobbies');
+    // Default sorting:
+    mongoRest.addResource('user', require('../models/user'), null, [ [ "name", 1 ], [ "username", 1 ] ]);
 
-That's it. Now MongoREST nows that it has to use this model whenever the resource `users` is
-accessed.
+That's it. Now MongoREST nows that it has to use those models whenever the resources `users`
+or `hobbies` are accessed.
 
 
 
