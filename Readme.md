@@ -1,4 +1,4 @@
-# MongoREST Version 2.0.0
+# MongoREST Version 2.0.2
 
 This is an [express][] [node][] [module][node modules] to provide basic [REST][] support to
 access [mongodb][] [documents][mongodb documents] via [mongoose][].
@@ -27,7 +27,7 @@ library][]. If you contribute please make sure that you write tests for it.
 
 
 The latest **stable** version is always in the `master` branch. The `develop` branch is
-cuttin edge. Often the tests won't even completely pass. Only checkout the `develop` branch
+cutting edge where tests regularely won't completely pass. Only checkout the `develop` branch
 if you want to contribute.
 
 
@@ -37,7 +37,7 @@ With npm:
 
     npm install mongo-rest
 
-Or simply download the lates version from here, and put it in node_modules/mongo-rest.
+Or simply download the lates version from here, and put it in `node_modules/mongo-rest`.
 
 
 ## Usage
@@ -62,9 +62,9 @@ MongoREST exposes a class you instatiate with your options. The long version loo
 The options for MongoRest are:
 
   - `urlPath` The path prefix for the rest resources. Default to `/`
-  - `entityViewTemplate` The template that will be used as view name to render entity reosources. {{singularName}} and {{pluralName}} can be used and will be substituted
-  - `collectionViewTemplate` The template that will be used as view name to render collection reosources. {{singularName}} and {{pluralName}} can be used and will be substituted
-  - `enableXhr` Enables a JSON interface for XMLHttpRequests. Make sure you don't leak important information!
+  - `entityViewTemplate` The template that will be used as view name to render entity resources. `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
+  - `collectionViewTemplate` The template that will be used as view name to render collection resources. `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
+  - `enableXhr` Enables a JSON interface for XMLHttpRequests. **Make sure you don't leak important information!**
   - `singleView` Whether there is a single view or not. If not, only the collection view will be used.
 
 As a one liner it looks like this:
@@ -91,9 +91,11 @@ forward:
     mongoRest.addResource('user', require('../models/user'));
     // Or for irregular plurals:
     mongoRest.addResource('hobby', require('../models/user'), 'hobbies');
+    // Default sorting:
+    mongoRest.addResource('user', require('../models/user'), null, [ [ "name", 1 ], [ "username", 1 ] ]);
 
-That's it. Now MongoREST nows that it has to use this model whenever the resource `users` is
-accessed.
+That's it. Now MongoREST nows that it has to use those models whenever the resources `users`
+or `hobbies` are accessed.
 
 
 
@@ -185,18 +187,27 @@ The responses from Mongo-REST for XMLHttpRequests are always JSON and look like 
 Note that `error` and `redirect` can be submitted simultaniously.
 
 
-# License
+## License
 
-License  
 (The MIT License)
 
-Copyright (c) 2012 Matias Meno <m@tias.me>
+Copyright (c) 2012 Matias Meno &lt;m@tias.me&gt;
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the 'Software'), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy of this
+software and associated documentation files (the 'Software'), to deal in the Software
+without restriction, including without limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons
+to whom the Software is furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
 
 
 [mongoose model]: http://mongoosejs.com/docs/model-definition.html
