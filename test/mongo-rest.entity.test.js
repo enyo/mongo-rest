@@ -212,9 +212,7 @@ describe('MongoRest', function() {
           ;
 
         mongoRest.addInterceptor("user", "put", interceptor("firstPut"));
-        mongoRest.addInterceptor("user", "put", function(info, iDone) {
-          iDone(new Error("interceptor error"));
-        });
+        mongoRest.addInterceptor("user", "put", function(info, iDone) { iDone(new Error("interceptor error")); });
         mongoRest.addInterceptor("user", "put", interceptor("secondPut"));
         mongoRest.addInterceptor("user", "put.success", interceptor("put.success"));
         mongoRest.addInterceptor("user", "put.error", interceptor("put.error"));
@@ -269,7 +267,7 @@ describe('MongoRest', function() {
           ;
 
         mongoRest.addInterceptor("user", "delete", interceptor("firstPut"));
-        mongoRest.addInterceptor("user", "delete", interceptor("secondPut"));
+        mongoRest.addInterceptor("user", "delete", interceptor("secondDelete"));
         mongoRest.addInterceptor("user", "delete.success", interceptor("delete.success"));
         mongoRest.addInterceptor("user", "delete.error", interceptor("delete.error"));
 
@@ -277,7 +275,7 @@ describe('MongoRest', function() {
           redirect: function(address) {
             address.should.equal("/users");
             flashs.should.eql([ [ 'success', 'Successfully deleted the record.' ] ]);
-            interceptorList.should.eql([ "firstPut", "secondPut", "delete.success" ]);
+            interceptorList.should.eql([ "firstPut", "secondDelete", "delete.success" ]);
             done();
           }
         };
@@ -293,8 +291,8 @@ describe('MongoRest', function() {
           , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
           ;
 
-        mongoRest.addInterceptor("user", "delete", interceptor("firstPut"));
-        mongoRest.addInterceptor("user", "delete", interceptor("secondPut"));
+        mongoRest.addInterceptor("user", "delete", interceptor("firstDelete"));
+        mongoRest.addInterceptor("user", "delete", interceptor("secondDelete"));
         mongoRest.addInterceptor("user", "delete.success", interceptor("delete.success"));
         mongoRest.addInterceptor("user", "delete.error", interceptor("delete.error"));
 
@@ -302,7 +300,59 @@ describe('MongoRest', function() {
         mongoRest.renderError = function(err, address, req, res, next) {
           err.message.should.equal("Unable to delete the record: Something went wrong2");
           address.should.equal("/users");
-          interceptorList.should.eql([ "firstPut", "secondPut", "delete.error" ]);
+          interceptorList.should.eql([ "firstDelete", "secondDelete", "delete.error" ]);
+          done();
+        };
+
+
+        mongoRest.entityDelete()(req, { }, { });
+
+      });
+      it("should call the 'delete.error' event interceptors if the 'delete' interceptors error", function(done) {
+        error = null;
+        mongoRest.flash = function(type, message) { true.should.be.false; };
+
+        var interceptorList = []
+          , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
+          ;
+
+        mongoRest.addInterceptor("user", "delete", interceptor("firstDelete"));
+        mongoRest.addInterceptor("user", "delete", function(info, iDone) { iDone(new Error("interceptor error")); });
+        mongoRest.addInterceptor("user", "delete", interceptor("secondDelete"));
+        mongoRest.addInterceptor("user", "delete.success", interceptor("delete.success"));
+        mongoRest.addInterceptor("user", "delete.error", interceptor("delete.error"));
+
+
+        mongoRest.renderError = function(err, address, req, res, next) {
+          err.message.should.equal("Unable to delete the record: interceptor error");
+          address.should.equal("/users");
+          interceptorList.should.eql([ "firstDelete", "delete.error" ]);
+          done();
+        };
+
+
+        mongoRest.entityDelete()(req, { }, { });
+
+      });
+      it("should call the 'delete.error' event interceptors if the 'delete.success' interceptors error", function(done) {
+        error = null;
+        mongoRest.flash = function(type, message) { true.should.be.false; };
+
+        var interceptorList = []
+          , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
+          ;
+
+        mongoRest.addInterceptor("user", "delete", interceptor("firstDelete"));
+        mongoRest.addInterceptor("user", "delete", interceptor("secondDelete"));
+        mongoRest.addInterceptor("user", "delete.success", interceptor("delete.success"));
+        mongoRest.addInterceptor("user", "delete.success", function(info, iDone) { iDone(new Error("interceptor error")); });
+        mongoRest.addInterceptor("user", "delete.error", interceptor("delete.error"));
+
+
+        mongoRest.renderError = function(err, address, req, res, next) {
+          err.message.should.equal("Unable to delete the record: interceptor error");
+          address.should.equal("/users");
+          interceptorList.should.eql([ "firstDelete", "secondDelete", "delete.success", "delete.error" ]);
           done();
         };
 
