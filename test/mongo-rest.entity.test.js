@@ -133,7 +133,7 @@ describe('MongoRest', function() {
   });
 
   describe("modification functions", function() {
-    var mongoRest = new MongoRest({ }, null, true) // Don't register routes
+    var mongoRest
       , error
       , req = {
           body: { newResource: { some: 'values' } }
@@ -147,7 +147,11 @@ describe('MongoRest', function() {
       }
       ;
 
-    mongoRest.addResource("user", { });
+    beforeEach(function() {
+      mongoRest = new MongoRest({ }, null, true); // Don't register routes
+      mongoRest.addResource("user", { });
+    });
+
 
     describe("entityPut()", function() {
       it("should call the 'put' and 'put.success' event interceptors on success", function(done) {
@@ -159,8 +163,8 @@ describe('MongoRest', function() {
           , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
           ;
 
-        mongoRest.addInterceptor("user", "put", interceptor("firstPost"));
-        mongoRest.addInterceptor("user", "put", interceptor("secondPost"));
+        mongoRest.addInterceptor("user", "put", interceptor("firstPut"));
+        mongoRest.addInterceptor("user", "put", interceptor("secondPut"));
         mongoRest.addInterceptor("user", "put.success", interceptor("put.success"));
         mongoRest.addInterceptor("user", "put.error", interceptor("put.error"));
 
@@ -168,7 +172,7 @@ describe('MongoRest', function() {
           redirect: function(address) {
             address.should.equal("/user/12345");
             flashs.should.eql([ [ 'success', 'Successfully updated the record.' ] ]);
-            interceptorList.should.eql([ "firstPost", "secondPost", "put.success" ]);
+            interceptorList.should.eql([ "firstPut", "secondPut", "put.success" ]);
             done();
           }
         };
@@ -184,15 +188,67 @@ describe('MongoRest', function() {
           , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
           ;
 
-        mongoRest.addInterceptor("user", "put", interceptor("firstPost"));
-        mongoRest.addInterceptor("user", "put", interceptor("secondPost"));
+        mongoRest.addInterceptor("user", "put", interceptor("firstPut"));
+        mongoRest.addInterceptor("user", "put", interceptor("secondPut"));
         mongoRest.addInterceptor("user", "put.success", interceptor("put.success"));
         mongoRest.addInterceptor("user", "put.error", interceptor("put.error"));
 
         mongoRest.renderError = function(err, address, req, res, next) {
           err.message.should.equal("Unable to save the record: Something went wrong1");
           address.should.equal("/user/12345");
-          interceptorList.should.eql([ "firstPost", "secondPost", "put.error" ]);
+          interceptorList.should.eql([ "firstPut", "secondPut", "put.error" ]);
+          done();
+        }
+
+        mongoRest.entityPut()(req, { }, { });
+
+      });
+      it("should call the 'put.error' event interceptors if the 'put' interceptor errors", function(done) {
+        error = null;
+        mongoRest.flash = function(type, message) { false.should.be.true; }; // Should not happen.
+
+        var interceptorList = []
+          , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
+          ;
+
+        mongoRest.addInterceptor("user", "put", interceptor("firstPut"));
+        mongoRest.addInterceptor("user", "put", function(info, iDone) {
+          iDone(new Error("interceptor error"));
+        });
+        mongoRest.addInterceptor("user", "put", interceptor("secondPut"));
+        mongoRest.addInterceptor("user", "put.success", interceptor("put.success"));
+        mongoRest.addInterceptor("user", "put.error", interceptor("put.error"));
+
+        mongoRest.renderError = function(err, address, req, res, next) {
+          err.message.should.equal("Unable to save the record: interceptor error");
+          address.should.equal("/user/12345");
+          interceptorList.should.eql([ "firstPut", "put.error" ]);
+          done();
+        }
+
+        mongoRest.entityPut()(req, { }, { });
+
+      });
+      it("should call the 'put.error' event interceptors if the put.success interceptor errors", function(done) {
+        error = null;
+        mongoRest.flash = function(type, message) { false.should.be.true; }; // Should not happen.
+
+        var interceptorList = []
+          , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
+          ;
+
+        mongoRest.addInterceptor("user", "put", interceptor("firstPut"));
+        mongoRest.addInterceptor("user", "put", interceptor("secondPut"));
+        mongoRest.addInterceptor("user", "put.success", interceptor("put.success"));
+        mongoRest.addInterceptor("user", "put.error", interceptor("put.error"));
+        mongoRest.addInterceptor("user", "put.success", function(info, iDone) {
+          iDone(new Error("interceptor error"));
+        });
+
+        mongoRest.renderError = function(err, address, req, res, next) {
+          err.message.should.equal("Unable to save the record: interceptor error");
+          address.should.equal("/user/12345");
+          interceptorList.should.eql([ "firstPut", "secondPut", "put.success", "put.error" ]);
           done();
         }
 
@@ -212,8 +268,8 @@ describe('MongoRest', function() {
           , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
           ;
 
-        mongoRest.addInterceptor("user", "delete", interceptor("firstPost"));
-        mongoRest.addInterceptor("user", "delete", interceptor("secondPost"));
+        mongoRest.addInterceptor("user", "delete", interceptor("firstPut"));
+        mongoRest.addInterceptor("user", "delete", interceptor("secondPut"));
         mongoRest.addInterceptor("user", "delete.success", interceptor("delete.success"));
         mongoRest.addInterceptor("user", "delete.error", interceptor("delete.error"));
 
@@ -221,7 +277,7 @@ describe('MongoRest', function() {
           redirect: function(address) {
             address.should.equal("/users");
             flashs.should.eql([ [ 'success', 'Successfully deleted the record.' ] ]);
-            interceptorList.should.eql([ "firstPost", "secondPost", "delete.success" ]);
+            interceptorList.should.eql([ "firstPut", "secondPut", "delete.success" ]);
             done();
           }
         };
@@ -237,8 +293,8 @@ describe('MongoRest', function() {
           , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
           ;
 
-        mongoRest.addInterceptor("user", "delete", interceptor("firstPost"));
-        mongoRest.addInterceptor("user", "delete", interceptor("secondPost"));
+        mongoRest.addInterceptor("user", "delete", interceptor("firstPut"));
+        mongoRest.addInterceptor("user", "delete", interceptor("secondPut"));
         mongoRest.addInterceptor("user", "delete.success", interceptor("delete.success"));
         mongoRest.addInterceptor("user", "delete.error", interceptor("delete.error"));
 
@@ -246,7 +302,7 @@ describe('MongoRest', function() {
         mongoRest.renderError = function(err, address, req, res, next) {
           err.message.should.equal("Unable to delete the record: Something went wrong2");
           address.should.equal("/users");
-          interceptorList.should.eql([ "firstPost", "secondPost", "delete.error" ]);
+          interceptorList.should.eql([ "firstPut", "secondPut", "delete.error" ]);
           done();
         };
 

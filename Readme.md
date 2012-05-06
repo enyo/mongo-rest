@@ -132,6 +132,7 @@ You register an interceptor like this:
 
 The available event names are:
 
+  - `get` Called when a resource is retrieved.
   - `post`, `post.success`, `post.error` Called when a new resource is posted.
   - `put`, `put.success`, `put.error` Called when a resource is updated.
   - `delete`, `delete.success`, `delete.error` Called when a resource is deleted.
