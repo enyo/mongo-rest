@@ -134,7 +134,24 @@ describe('MongoRest interceptors', function() {
         called.should.equal(3);
         done();
       });
-      
+    });
+    it('should stop invoking interceptors when one interceptor fails with get-collection as well', function(done) {
+      var called = 0;
+      var err1 = new Error("err1")
+        , err2 = new Error("err2")
+        , err3 = new Error("err3");
+
+      // this interceptor calls `done` with an error only if the document contains `a`. Which means
+      // that it will be called 3 times.
+      mongoRest.addInterceptor('user', 'get', function(info, done) { called ++; done(info.doc.a ? err1 : null); });
+      mongoRest.addInterceptor('user', 'get', function(info, done) { called ++; done(err2); });
+      mongoRest.addInterceptor('user', 'get', function(info, done) { called ++; done(err3); });
+
+      mongoRest.invokeInterceptors('user', 'get-collection', { docs: [{ }, { }, { a: 1 }] }, req, res, next, function(err) {
+        err.should.equal(err1);
+        called.should.equal(3);
+        done();
+      });
     });
 
   });

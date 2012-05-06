@@ -143,7 +143,10 @@ The parameters provided to the handler are:
 
   - `info` An object containing the `doc` and or the `values` that will be used to update the record
   - `done` A callback that **has to be called** as soon as the interceptor is finished handling the event.
-           (this allows for asynchronous interceptors)
+           (this allows for asynchronous interceptors).
+           If there was an error during the execution of an interceptor, call this function with
+           the `err` object as first parameter. The invokation of the other interceptors will
+           be canceled (if possible).
   - `req`
   - `res`
   - `next`
