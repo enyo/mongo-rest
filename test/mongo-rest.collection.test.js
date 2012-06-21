@@ -156,7 +156,10 @@ describe('MongoRest', function() {
       }
       ;
 
-    mongoRest.addResource("user", { });
+    beforeEach(function() {
+      mongoRest = new MongoRest({ }, null, true); // Don't register routes
+      mongoRest.addResource("user", { });
+    });
 
 
     it("should call the 'post' and 'post.success' event interceptors on success", function(done) {
@@ -198,6 +201,58 @@ describe('MongoRest', function() {
         err.message.should.equal("Unable to insert the record: Some Error");
         address.should.equal("/users");
         interceptorList.should.eql([ "firstPost", "secondPost", "post.error" ]);
+        done();
+      };
+
+      mongoRest.collectionPost()(req, { }, { });
+    });
+    it("should call the 'post.error' event interceptors if the 'post' interceptor errors", function(done) {
+      mongoRest.flash = function(type, message) { true.should.be.false; }
+
+      emptyDoc = { save: function(callback) { setTimeout(function() { callback(); }, 1); } }
+
+      var interceptorList = []
+        , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
+        ;
+
+      mongoRest.addInterceptor("user", "post", interceptor("firstPost"));
+      mongoRest.addInterceptor("user", "post", function(info, iDone) { iDone(new Error("interceptor error")); });
+      mongoRest.addInterceptor("user", "post", interceptor("secondPost"));
+      mongoRest.addInterceptor("user", "post.success", interceptor("post.success"));
+      mongoRest.addInterceptor("user", "post.error", interceptor("post.error"));
+
+
+
+      mongoRest.renderError = function(err, address, req, res, next) {
+        err.message.should.equal("Unable to insert the record: interceptor error");
+        address.should.equal("/users");
+        interceptorList.should.eql([ "firstPost", "post.error" ]);
+        done();
+      };
+
+      mongoRest.collectionPost()(req, { }, { });
+    });
+    it("should call the 'post.error' event interceptors if the post.success interceptor errors", function(done) {
+      mongoRest.flash = function(type, message) { true.should.be.false; }
+
+      emptyDoc = { save: function(callback) { setTimeout(function() { callback(); }, 1); } }
+
+      var interceptorList = []
+        , interceptor = function(intName) { return function(info, iDone) { interceptorList.push(intName); setTimeout(iDone, 1); } }
+        ;
+
+      mongoRest.addInterceptor("user", "post", interceptor("firstPost"));
+      mongoRest.addInterceptor("user", "post", interceptor("secondPost"));
+      mongoRest.addInterceptor("user", "post.success", interceptor("post.success"));
+      mongoRest.addInterceptor("user", "post.error", interceptor("post.error"));
+
+      mongoRest.addInterceptor("user", "post.success", function(info, iDone) { iDone(new Error("interceptor error")); });
+
+
+      mongoRest.renderError = function(err, address, req, res, next) {
+        err.message.should.equal("Unable to insert the record: interceptor error");
+        address.should.equal("/users");
+        interceptorList.should.eql([ "firstPost", "secondPost", "post.success", "post.error" ]);
         done();
       };
 

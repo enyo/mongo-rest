@@ -1,4 +1,4 @@
-# MongoREST Version 2.0.2
+# MongoREST Version 2.1.3
 
 This is an [express][] [node][] [module][node modules] to provide basic [REST][] support to
 access [mongodb][] [documents][mongodb documents] via [mongoose][].
@@ -132,6 +132,7 @@ You register an interceptor like this:
 
 The available event names are:
 
+  - `get` Called when a resource is retrieved.
   - `post`, `post.success`, `post.error` Called when a new resource is posted.
   - `put`, `put.success`, `put.error` Called when a resource is updated.
   - `delete`, `delete.success`, `delete.error` Called when a resource is deleted.
@@ -143,7 +144,10 @@ The parameters provided to the handler are:
 
   - `info` An object containing the `doc` and or the `values` that will be used to update the record
   - `done` A callback that **has to be called** as soon as the interceptor is finished handling the event.
-           (this allows for asynchronous interceptors)
+           (this allows for asynchronous interceptors).
+           If there was an error during the execution of an interceptor, call this function with
+           the `err` object as first parameter. The invokation of the other interceptors will
+           be canceled (if possible).
   - `req`
   - `res`
   - `next`
