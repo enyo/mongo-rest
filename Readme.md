@@ -1,4 +1,4 @@
-# MongoREST Version 2.1.4-dev
+# MongoREST Version 2.1.4
 
 This is an [express][] [node][] [module][node modules] to provide basic [REST][] support to
 access [mongodb][] [documents][mongodb documents] via [mongoose][].
