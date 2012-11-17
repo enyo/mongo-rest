@@ -97,7 +97,7 @@ describe('MongoRest', function() {
 
       mongoRest = new MongoRest(app, null, true); // dont register routes
 
-      mongoRest.parseViewTemplate("abc.{{singularName}}.def.{{pluralName}}", { singularName: 'user', pluralName: 'users' }).should.equal("abc.user.def.users")
+      mongoRest.parseViewTemplate("abc.{{singularName}}.def.{{pluralName}}", { singularName: 'user', pluralName: 'users' }).should.eql("abc.user.def.users");
     });
   });
 

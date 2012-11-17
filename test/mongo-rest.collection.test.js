@@ -73,13 +73,13 @@ describe('MongoRest', function() {
       , doc1 = new function() { this.doc1 = true; }
       , doc2 = new function() { this.doc2 = true; }
       , initialDocs = [ doc1, doc2 ]
-      , run = function(callback) {
+      , exec = function(callback) {
           callback(null, initialDocs);
         }
       , model = {
             find: function() { return model; }
           , sort: function() { return model; }
-          , run: run
+          , exec: exec
         }
       , req = { resource: { singularName: 'user', pluralName: 'users', model: model }, params: { resourceName: 'user' } }
       ;
