@@ -1,12 +1,8 @@
 #!/bin/bash
 
-echo "Going to checkout master..." &&
+echo "Going to checkout master, publish to npm and checkout develop. OK? " &&
 read && 
 git checkout master &&
-echo "Going to publish to npm..." &&
-read &&
 npm publish && 
-echo "Going to checkout develop..." &&
-read &&
 git checkout develop
 
