@@ -1,4 +1,4 @@
-# MongoREST Version 2.1.5-dev
+# MongoREST Version 2.1.5
 
 ![Build status](https://travis-ci.org/enyo/mongo-rest.png)
 
