@@ -1,6 +1,6 @@
-BIN = mocha
+mocha = ./node_modules/mocha/bin/mocha
 
 test:
-	$(BIN)
+	$(mocha) --reporter spec
 
 .PHONY: test

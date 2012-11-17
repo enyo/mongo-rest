@@ -9,7 +9,8 @@
       "underscore": "1.x"
     }
   , "devDependencies": {
-      "should": "0.x"
+      "mocha": "*",
+      "should": "*"
     }
   , "scripts": {
       "test": "make test"
