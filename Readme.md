@@ -56,8 +56,10 @@ That's it, you're done.
 
 MongoREST exposes a class you instatiate with your options. The long version looks like this:
 
-    var MongoRest = require('mongo-rest')
-      , mongoRest = new MongoRest(app, { viewPath: 'admin/resources/' });
+```js
+var MongoRest = require('mongo-rest')
+  , mongoRest = new MongoRest(app, { ...options... });
+```
 
 The options for MongoRest are:
 
@@ -69,7 +71,9 @@ The options for MongoRest are:
 
 As a one liner it looks like this:
 
-    var mongoRest = new (require('mongo-rest'))(app, options);
+```js
+var mongoRest = new (require('mongo-rest'))(app, options);
+```
 
 When instantiated, MongoREST registers the routes with the `app` so that all REST routes
 become accessible. If you provided `'/resources/'` as `urlPath` then following urls will
@@ -88,11 +92,13 @@ To tell `mongo-rest` which resources it should support you simple add each [mong
 Normally you do this in the same place you define your routes. The code is quite straight
 forward:
 
-    mongoRest.addResource('user', require('../models/user'));
-    // Or for irregular plurals:
-    mongoRest.addResource('hobby', require('../models/user'), 'hobbies');
-    // Default sorting:
-    mongoRest.addResource('user', require('../models/user'), null, [ [ "name", 1 ], [ "username", 1 ] ]);
+```js
+mongoRest.addResource('user', require('../models/user'));
+// Or for irregular plurals:
+mongoRest.addResource('hobby', require('../models/user'), 'hobbies');
+// Default sorting:
+mongoRest.addResource('user', require('../models/user'), null, [ [ "name", 1 ], [ "username", 1 ] ]);
+```
 
 That's it. Now MongoREST nows that it has to use those models whenever the resources `users`
 or `hobbies` are accessed.
@@ -122,13 +128,14 @@ Sometimes some actions need to be taken before or after inserting, updating or d
 
 You register an interceptor like this:
 
-    var eventName = 'post.success'
-      , handler = function(info, done, req, res, next) { /* Do stuff */ done(); };
+```js
+var eventName = 'post.success'
+  , handler = function(info, done, req, res, next) { /* Do stuff */ done(); };
 
-    mongoRest.addInterceptor('user', eventName, handler);
-    // You can also provide the same handler for multiple event names:
-    mongoRest.addInterceptor('users', [ 'post', 'put' ], handler);
-
+mongoRest.addInterceptor('user', eventName, handler);
+// You can also provide the same handler for multiple event names:
+mongoRest.addInterceptor('users', [ 'post', 'put' ], handler);
+```
 
 The available event names are:
 
@@ -155,22 +162,23 @@ The parameters provided to the handler are:
 
 An example of an interceptor could look like this:
 
-    /**
-     * Intercepts posts and puts for guestbook-messages. It compiles the provided textSource with jade, and stores
-     * the old textSource in a textVersions array to provide a history.
-     */
-    mongoRest.addInterceptor('guestbook-message', [ 'post', 'put' ], function(info, done) {
-      // Compile the new textSource value with jade, and put the compiled code in textHtml
-      info.values.textHtml = (jade.compile(info.values.textSource))({});
-      // Since there is no existing doc when posting a new resource, we test if it exists...
-      if (info.doc) {
-        // ...and if it does we add the old textSource to the textVersions array to have a history.
-        info.doc.textVersions.push(info.doc.textSource);
-      }
-      // Tell mongoRest that the interceptor finished intercepting the request.
-      done();
-    });
-
+```js
+/**
+ * Intercepts posts and puts for guestbook-messages. It compiles the provided textSource with jade, and stores
+ * the old textSource in a textVersions array to provide a history.
+ */
+mongoRest.addInterceptor('guestbook-message', [ 'post', 'put' ], function(info, done) {
+  // Compile the new textSource value with jade, and put the compiled code in textHtml
+  info.values.textHtml = (jade.compile(info.values.textSource))({});
+  // Since there is no existing doc when posting a new resource, we test if it exists...
+  if (info.doc) {
+    // ...and if it does we add the old textSource to the textVersions array to have a history.
+    info.doc.textVersions.push(info.doc.textSource);
+  }
+  // Tell mongoRest that the interceptor finished intercepting the request.
+  done();
+});
+```
 
 ## XMLHttpRequests
 
@@ -179,14 +187,16 @@ If you want to enable them simply pass the option `enableXhr`.
 
 The responses from Mongo-REST for XMLHttpRequests are always JSON and look like this:
 
-    // If everything went right for entities:
-    { doc: doc }
-    // If everything went right for collections:
-    { docs: docs }
-    // If the server would normally redirect:
-    { redirect: "some/url" }
-    // and if there was an error
-    { error: "There was a problem." }
+```js
+// If everything went right for entities:
+{ doc: doc }
+// If everything went right for collections:
+{ docs: docs }
+// If the server would normally redirect:
+{ redirect: "some/url" }
+// and if there was an error
+{ error: "There was a problem." }
+```
 
 Note that `error` and `redirect` can be submitted simultaniously.
 
