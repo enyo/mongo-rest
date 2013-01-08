@@ -15,7 +15,9 @@ describe('MongoRest', function() {
             resource: {
               singularName: 'user',
               pluralName: 'users',
-              model: function() { }
+              model: function() { },
+              enableXhr: false,
+              entityViewTemplate: "resource_views/my_lovely_resource_user_show"
             },
             params: {
               resourceName: 'user'
@@ -34,6 +36,7 @@ describe('MongoRest', function() {
       // enableXhr is false by default.
       sentDoc = renderedView = renderedInfo = null;
 
+      req.resource.enableXhr = false;
       mongoRest = new MongoRest({ }, { entityViewTemplate: "resource_views/my_lovely_resource_{{singularName}}_show" }, true); // Don't register routes
       mongoRest.renderEntity(doc, req, res, next);
 
@@ -46,7 +49,8 @@ describe('MongoRest', function() {
       // Set enableXhr to true
       sentDoc = renderedView = renderedInfo = null;
 
-      mongoRest = new MongoRest({ }, { enableXhr: true, entityViewTemplate: "resource_views/my_lovely_resource_{{singularName}}_show" }, true); // Don't register routes
+      req.resource.enableXhr = true;
+      mongoRest = new MongoRest({ }, { }, true); // Don't register routes
       mongoRest.renderEntity(doc, req, res, next);
 
       sentDoc.should.eql({ doc: doc });
@@ -142,7 +146,7 @@ describe('MongoRest', function() {
             save: function(callback) { setTimeout(function() { callback(error); }, 1); },
             remove: function(callback) { setTimeout(function() { callback(error); }, 1); }
           }
-        , resource: { singularName: 'user', pluralName: 'users', model: function() { throw new Error(); } }
+        , resource: { singularName: 'user', pluralName: 'users', model: function() { throw new Error(); }, entityViewTemplate: "bla", collectionViewTemplate: "bla", singleView: true }
         , params: { resourceName: 'user' }
       }
       ;

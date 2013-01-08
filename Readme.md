@@ -96,10 +96,16 @@ forward:
 
 ```js
 mongoRest.addResource('user', require('../models/user'));
-// Or for irregular plurals:
-mongoRest.addResource('hobby', require('../models/user'), 'hobbies');
-// Default sorting:
-mongoRest.addResource('user', require('../models/user'), null, [ [ "name", 1 ], [ "username", 1 ] ]);
+// And you can pass options:
+mongoRest.addResource('hobby', require('../models/user'), {
+  pluralName: 'hobbies', // for irregular plurals
+  sort: [ [ "name", 1 ], [ "username", 1 ] ], // Default sorting
+  // And all class options can be used here to be overriden for this resource:
+  entityViewTemplate: "my_cool_template",
+  collectionViewTemplate: "my_awesome_records_template",
+  enableXhr: false,
+  singleView: true
+});
 ```
 
 That's it. Now MongoREST nows that it has to use those models whenever the resources `users`

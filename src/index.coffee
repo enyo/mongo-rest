@@ -43,7 +43,7 @@ class MongoRest
   constructor: (@app, options, dontRegisterRoutes) ->
     @options = { }
     for own key, value of @defaultOptions
-      @options[key] = if options?[key]? then options[key] else value
+      @options[key] = options?[key] ? value
     
     # The resources for which there will be a rest interface
     @resources = []
@@ -78,19 +78,29 @@ class MongoRest
 
   # Adds a model to be served as rest.
   # 
-  # @param {String} singularName E.g.: `'user'`
-  # @param {Object} model
-  # @param {String} pluralName Optional, if the plural is not simply the singular with an 's'
-  # @param {Array} defaultSort Optional, e.g.: [ [ 'name', 1 ], [ 'date', -1 ] ]
-  addResource: (singularName, model, pluralName, defaultSort) ->
+  # - singularName E.g.: `'user'`
+  # - mongoose model
+  # - options. Can be:
+  #   - pluralName
+  #   - sort the default value to sort by
+  #   - ...all defaultOptions can be overriden here, except for urlPath
+  addResource: (singularName, model, options = { }) ->
     pluralName = pluralName or singularName + "s"
-    throw new Exception("The singular and plural name have to be different.")  if pluralName is singularName
     resource =
       singularName: singularName
-      pluralName: pluralName
+      pluralName: options.pluralName ? singularName + "s"
       model: model
 
-    resource.sort = defaultSort  if defaultSort
+    resource.sort = options.sort if options.sort?
+
+    throw new Exception("The singular and plural name have to be different.")  if resource.pluralName is resource.singularName
+
+    for key, value of @options
+      resource[key] = options[key] ? value unless key == "urlPath"
+
+    resource.entityViewTemplate = @parseViewTemplate resource.entityViewTemplate, resource
+    resource.collectionViewTemplate = @parseViewTemplate resource.collectionViewTemplate, resource
+
     @resources.push resource
 
 
@@ -224,7 +234,7 @@ class MongoRest
   @return {String}
   ###
   getEntityUrl: (resource, doc) ->
-    (if @options.singleView then @options.urlPath + resource.singularName + "/" + doc._id else @getCollectionUrl(resource))
+    (if resource.singleView then @options.urlPath + resource.singularName + "/" + doc._id else @getCollectionUrl(resource))
 
 
   ###
@@ -237,7 +247,7 @@ class MongoRest
   @param  {Req} req
   ###
   flash: (type, msg, req) ->
-    req.flash type, msg  if not req.xhr or not @options.enableXhr
+    req.flash type, msg  if not req.xhr or not req.resource.enableXhr
 
 
   ###
@@ -255,7 +265,7 @@ class MongoRest
   @api private
   ###
   renderError: (err, redirectUrl, req, res, next) ->
-    if @options.enableXhr and req.xhr
+    if req.resource.enableXhr and req.xhr
       obj = error: err.message
       redirectUrl and (obj.redirect = redirectUrl)
       res.send obj
@@ -277,10 +287,11 @@ class MongoRest
   @api private
   ###
   renderCollection: (docs, req, res, next) ->
-    if @options.enableXhr and req.xhr
+    resource = req.resource
+    if resource.enableXhr and req.xhr
       res.send docs: docs
     else
-      res.render @parseViewTemplate(@options.collectionViewTemplate, req.resource),
+      res.render resource.collectionViewTemplate,
         docs: docs
         site: req.params.resourceName + "-list"
 
@@ -296,10 +307,11 @@ class MongoRest
   @api private
   ###
   renderEntity: (doc, req, res, next) ->
-    if @options.enableXhr and req.xhr
+    resource = req.resource
+    if resource.enableXhr and req.xhr
       res.send doc: doc
     else
-      res.render @parseViewTemplate(@options.entityViewTemplate, req.resource),
+      res.render resource.entityViewTemplate,
         doc: doc
         site: req.params.resourceName + "-show"
 
@@ -315,7 +327,8 @@ class MongoRest
   @api private
   ###
   redirect: (address, req, res, next) ->
-    if @options.enableXhr and req.xhr
+    resource = req.resource
+    if resource.enableXhr and req.xhr
       res.send redirect: address
     else
       res.redirect address
@@ -411,7 +424,7 @@ class MongoRest
               error err
               return
             self.flash "success", "Successfully inserted the record.", req
-            if self.options.enableXhr and req.xhr
+            if req.resource.enableXhr and req.xhr
               self.renderEntity info.doc, req, res, next
             else
               self.redirect redirectUrl, req, res, next
@@ -487,16 +500,16 @@ class MongoRest
   ###
   entityPut: ->
     _.bind ((req, res, next) ->
-      unless req.resource
-        next()
-        return
+      return next() unless req.resource
+
       self = this
-      throw new Error("Nothing submitted.")  if not req.body or not req.body.newResource
+      throw new Error("Nothing submitted.") if not req.body or not req.body.newResource
       info =
         doc: req.doc
         values: req.body.newResource
 
-      redirectUrl = self.getEntityUrl(req.resource, req.doc)
+      redirectUrl = self.getEntityUrl req.resource, req.doc
+
       error = (err) ->
         info.err = err
         self.invokeInterceptors req.resource.singularName, "put.error", info, req, res, next, (interceptorErr) ->
@@ -505,20 +518,17 @@ class MongoRest
 
 
       @invokeInterceptors req.resource.singularName, "put", info, req, res, next, (err) ->
-        if err
-          error err
-          return
+        return error err if err?
+          
         _.each info.values, (value, name) ->
           req.doc[name] = value
 
         req.doc.save (err) ->
-          if err
-            error err
-            return
+          return error err if err?
+            
           self.invokeInterceptors req.resource.singularName, "put.success", info, req, res, next, (err) ->
-            if err
-              error err
-              return
+            return error err if err?
+              
             self.flash "success", "Successfully updated the record.", req
             self.redirect redirectUrl, req, res, next
 

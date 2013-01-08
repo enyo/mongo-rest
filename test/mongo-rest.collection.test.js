@@ -12,7 +12,7 @@ describe('MongoRest', function() {
       var mongoRest
         , req = {
             xhr: true,
-            resource: { singularName: 'user', pluralName: 'users', model: { }},
+            resource: { enableXhr: true, singularName: 'user', pluralName: 'users', model: { }, entityViewTemplate: 'resources/user', collectionViewTemplate: 'resources/users'},
             params: {
               resourceName: 'user'
             }
@@ -32,7 +32,8 @@ describe('MongoRest', function() {
       // enableXhr is false by default.
       sentDocs = renderedView = renderedInfo = null;
 
-      mongoRest = new MongoRest({ }, { entityViewTemplate: 'resources/{{singularName}}', collectionViewTemplate: 'resources/{{pluralName}}' }, true); // Don't register routes
+      req.resource.enableXhr = false;
+      mongoRest = new MongoRest({ }, {  }, true); // Don't register routes
       mongoRest.renderCollection(docs, req, res, next);
 
       (sentDocs === null).should.be.true;
@@ -45,8 +46,9 @@ describe('MongoRest', function() {
       sentDocs = renderedView = renderedInfo = null;
 
       req.tmpFlashs = [ { type: "error", msg: "hi" } ];
+      req.resource.enableXhr = true;
 
-      mongoRest = new MongoRest({ }, { enableXhr: true, entityViewTemplate: 'resources/{{singularName}}', collectionViewTemplate: 'resources/{{pluralName}}' }, true); // Don't register routes
+      mongoRest = new MongoRest({ }, { entityViewTemplate: 'resources/{{singularName}}', collectionViewTemplate: 'resources/{{pluralName}}' }, true); // Don't register routes
       mongoRest.renderCollection(docs, req, res, next);
 
       sentDocs.should.eql({ docs: docs });

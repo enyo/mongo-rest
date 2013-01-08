@@ -61,10 +61,70 @@ describe('MongoRest', function() {
 
       mongoRest = new MongoRest(app, null, true); // dont register routes
 
-      mongoRest.addResource("user", model1);
-      mongoRest.addResource("hobby", model2, "hobbies");
+      mongoRest.addResource("user", model1, { sort: [ [ 'name', 1 ] ] });
+      mongoRest.addResource("hobby", model2, { pluralName: "hobbies" });
 
-      mongoRest.resources.should.eql([ { singularName: 'user', pluralName: 'users', model: model1 }, { singularName: 'hobby', pluralName: 'hobbies', model: model2 } ] );
+      mongoRest.resources.should.eql([ {
+        singularName: 'user', pluralName: 'users', model: model1, entityViewTemplate: "resource_user", collectionViewTemplate: "resource_users", enableXhr: false, singleView: true, sort: [ [ 'name', 1 ] ]
+      }, { singularName: 'hobby', pluralName: 'hobbies', model: model2, entityViewTemplate: "resource_hobby", collectionViewTemplate: "resource_hobbies", enableXhr: false, singleView: true } ] );
+    });
+    it("should take the class config and copy it onto the resource", function() {
+      var mongoRest
+        , app = { }
+        , model1 = new function() { this.model1 = true; }
+        ;
+
+      mongoRest = new MongoRest(app, {
+        entityViewTemplate: "/{{singularName}}/bla",
+        collectionViewTemplate: "/{{pluralName}}/bla",
+        enableXhr: true,
+        singleView: false
+      }, true); // dont register routes
+
+      mongoRest.addResource("user", model1);
+
+      mongoRest.resources.should.eql([ {
+        singularName: 'user',
+        pluralName: 'users',
+        model: model1,
+        entityViewTemplate: "/user/bla",
+        collectionViewTemplate: "/users/bla",
+        enableXhr: true,
+        singleView: false
+      }]);
+    });
+    it("the resource config should overwrite the class config", function() {
+      var mongoRest
+        , app = { }
+        , model1 = new function() { this.model1 = true; }
+        ;
+
+      mongoRest = new MongoRest(app, {
+        entityViewTemplate: "/{{singularName}}/bla",
+        collectionViewTemplate: "/{{pluralName}}/bla",
+        enableXhr: true,
+        singleView: false
+      }, true); // dont register routes
+
+      mongoRest.addResource("user", model1, {
+        entityViewTemplate: "/{{singularName}}/bleee",
+        collectionViewTemplate: "/{{pluralName}}/bleee",
+        enableXhr: false,
+        singleView: true,
+        sort: [ [ "test", 1 ]],
+        pluralName: "userers"
+      });
+
+      mongoRest.resources.should.eql([ {
+        singularName: 'user',
+        pluralName: 'userers',
+        model: model1,
+        entityViewTemplate: "/user/bleee",
+        collectionViewTemplate: "/userers/bleee",
+        enableXhr: false,
+        sort: [ [ "test", 1 ]],
+        singleView: true
+      }]);
     });
   });
 
@@ -79,12 +139,16 @@ describe('MongoRest', function() {
       mongoRest = new MongoRest(app, null, true); // dont register routes
 
       mongoRest.addResource("user", model1);
-      mongoRest.addResource("hobby", model2, "hobbies");
+      mongoRest.addResource("hobby", model2, { pluralName: "hobbies" });
 
-      mongoRest.getResource("hobbies").should.eql({ singularName: 'hobby', pluralName: 'hobbies', model: model2 });
-      mongoRest.getResource("hobby").should.eql({ singularName: 'hobby', pluralName: 'hobbies', model: model2 });
-      mongoRest.getResource("user").should.eql({ singularName: 'user', pluralName: 'users', model: model1 });
-      mongoRest.getResource("users").should.eql({ singularName: 'user', pluralName: 'users', model: model1 });
+      var hobbyResource = { singularName: 'hobby', pluralName: 'hobbies', model: model2, entityViewTemplate: "resource_hobby", collectionViewTemplate: "resource_hobbies", enableXhr: false, singleView: true };
+      mongoRest.getResource("hobbies").should.eql(hobbyResource);
+      mongoRest.getResource("hobby").should.eql(hobbyResource);
+
+      var userResource = { singularName: 'user', pluralName: 'users', model: model1, entityViewTemplate: "resource_user", collectionViewTemplate: "resource_users", enableXhr: false, singleView: true };
+
+      mongoRest.getResource("user").should.eql(userResource);
+      mongoRest.getResource("users").should.eql(userResource);
 
     });
   });
@@ -116,14 +180,14 @@ describe('MongoRest', function() {
       var mongoRest, app = { };
 
       mongoRest = new MongoRest(app, { urlPath: "/resource/", singleView: true }, true); // dont register routes
-      mongoRest.getEntityUrl({ singularName: 'user', pluralName: 'users' }, { _id: 123 }).should.equal("/resource/user/123");
+      mongoRest.getEntityUrl({ singularName: 'user', pluralName: 'users', singleView: true }, { _id: 123 }).should.equal("/resource/user/123");
 
     });
-    it("should return the colleciton url if no single view", function() {
+    it("should return the colleciton url if no single view in resource", function() {
       var mongoRest, app = { };
 
-      mongoRest = new MongoRest(app, { urlPath: "/resource/", singleView: false }, true); // dont register routes
-      mongoRest.getEntityUrl({ singularName: 'user', pluralName: 'users' }, { _id: 123 }).should.equal("/resource/users");
+      mongoRest = new MongoRest(app, { urlPath: "/resource/", singleView: true }, true); // dont register routes
+      mongoRest.getEntityUrl({ singularName: 'user', pluralName: 'users', singleView: false }, { _id: 123 }).should.equal("/resource/users");
 
     });
   })
@@ -131,7 +195,9 @@ describe('MongoRest', function() {
   describe("redirect()", function() {
     it("should redirect if not xhr", function(done) {
       var mongoRest, app = { }
-        , req = {}
+        , req = {
+          resource: { enableXhr: true }
+        }
         , res = { redirect: function(address) {
             address.should.equal("test");
             done();
@@ -143,13 +209,27 @@ describe('MongoRest', function() {
     });
     it("should return a redirect string if xhr", function(done) {
       var mongoRest, app = { }
-        , req = { xhr: true }
+        , req = { xhr: true, resource: { enableXhr: true } }
         , res = { send: function(obj) {
             obj.should.eql({ redirect: "test" });
             done();
           }}
         , next = function() { };
       mongoRest = new MongoRest(app, { enableXhr: true }, true); // dont register routes
+
+      mongoRest.redirect("test", req, res, next);
+    });
+    it("should take the config from the resource not the class", function(done) {
+      var mongoRest, app = { }
+        , req = { xhr: true, resource: { enableXhr: true } }
+        , res = { send: function(obj) {
+            obj.should.eql({ redirect: "test" });
+            done();
+          }}
+        , next = function() { };
+
+      // Now setting enableXhr to false here, but the resource config should be taken
+      mongoRest = new MongoRest(app, { enableXhr: false }, true); // dont register routes
 
       mongoRest.redirect("test", req, res, next);
     });
@@ -161,6 +241,7 @@ describe('MongoRest', function() {
       var mongoRest, app = { }
         , req = {
           xhr: true,
+          resource: { enableXhr: true },
           flash: function() { true.should.be.false; }
         }
         ;
@@ -171,10 +252,11 @@ describe('MongoRest', function() {
       mongoRest.flash("success", "hi2", req);
 
     });
-    it("should forward to req.flash() directly if not xhr.", function(done) {
+    it("should forward to req.flash() directly if xhr is disabled on resource", function(done) {
       var mongoRest, app = { }
         , req = {
             xhr: true,
+            resource: { enableXhr: false },
             flash: function(type, msg) {
               type.should.equal("error");
               msg.should.equal("some message");
@@ -200,11 +282,13 @@ describe('MongoRest', function() {
             }
           }
         , req = {
+            resource: { enableXhr: true },
             xhr: true
           }
         , next = function() { }
         ;
-      mongoRest = new MongoRest(app, { enableXhr: true }, true); // dont register routes
+      // The enableXhr setting here should be ignored
+      mongoRest = new MongoRest(app, { enableXhr: false }, true); // dont register routes
 
       mongoRest.flash("error", "test message", req);
 
@@ -216,7 +300,8 @@ describe('MongoRest', function() {
           }
         , flashed = []
         , req = {
-            xhr: true,
+            xhr: false,
+            resource: { enableXhr: true },
             flash: function(type, msg) {
               flashed.push([type, msg]);
             }
@@ -227,7 +312,8 @@ describe('MongoRest', function() {
             done();
           }
         ;
-      mongoRest = new MongoRest(app, { enableXhr: false }, true); // dont register routes
+      // The enableXhr setting here should be ignored.
+      mongoRest = new MongoRest(app, { enableXhr: true }, true); // dont register routes
 
       mongoRest.flash("error", "test message", req);
 
