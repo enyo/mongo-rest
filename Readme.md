@@ -88,6 +88,10 @@ become alive for the `user` resource:
     PUT: /resources/user/12345 (Updates the user with ID 12345)
     DELETE: /resources/user/12345 (Deletes the user with ID 12345)
 
+
+> **Note:** `/user` and `/users` are always both valid. So you can always access
+> your records on the plural or singular URLs. It's up to you.
+
 ### 2. Adding a mongoose model as resource
 
 To tell `mongo-rest` which resources it should support you simple add each [mongoose model].
