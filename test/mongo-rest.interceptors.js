@@ -1,4 +1,4 @@
-var MongoRest = require('../lib/index')
+var MongoRest = require('../src/index')
   , _ = require('underscore')
   , req = new function() { this.req = true }
   , res = new function() { this.res = true }
