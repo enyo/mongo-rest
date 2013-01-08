@@ -65,11 +65,21 @@ var MongoRest = require('mongo-rest')
 
 The options for MongoRest are:
 
-  - `urlPath` The path prefix for the rest resources. Default to `/`
-  - `entityViewTemplate` The template that will be used as view name to render entity resources. `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
-  - `collectionViewTemplate` The template that will be used as view name to render collection resources. `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
-  - `enableXhr` Enables a JSON interface for XMLHttpRequests. **Make sure you don't leak important information!**
-  - `singleView` Whether there is a single view or not. If not, only the collection view will be used.
+- `urlPath` The path prefix for the rest resources. Default to `/`
+- `entityViewTemplate`
+  The template that will be used as view name to render entity resources.
+  `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
+- `collectionViewTemplate`
+  The template that will be used as view name to render collection resources.
+  `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
+- `entityDataName`
+  The name that will be used in the JSON or in the template model. Defaults to
+  `'doc'`.
+- `collectionViewTemplate`
+  The name that will be used in the JSON or in the template model. Defaults to
+  `'docs'`.
+- `enableXhr` Enables a JSON interface for XMLHttpRequests. **Make sure you don't leak important information!**
+- `singleView` Whether there is a single view or not. If not, only the collection view will be used.
 
 As a one liner it looks like this:
 

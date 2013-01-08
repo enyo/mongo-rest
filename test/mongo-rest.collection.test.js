@@ -12,7 +12,7 @@ describe('MongoRest', function() {
       var mongoRest
         , req = {
             xhr: true,
-            resource: { enableXhr: true, singularName: 'user', pluralName: 'users', model: { }, entityViewTemplate: 'resources/user', collectionViewTemplate: 'resources/users'},
+            resource: { enableXhr: true, singularName: 'user', pluralName: 'users', model: { }, entityViewTemplate: 'resources/user', collectionViewTemplate: 'resources/users', entityDataName: 'doc', collectionDataName: 'docs' },
             params: {
               resourceName: 'user'
             }

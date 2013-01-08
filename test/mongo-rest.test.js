@@ -10,9 +10,9 @@ describe('MongoRest', function() {
         , app = { };
 
       mongoRest = new MongoRest(app, null, true); // dont register routes
-      mongoRest.options.should.eql({ urlPath: '/', entityViewTemplate: 'resource_{{singularName}}', collectionViewTemplate: 'resource_{{pluralName}}', enableXhr: false, singleView: true });
+      mongoRest.options.should.eql({ urlPath: '/', entityViewTemplate: 'resource_{{singularName}}', collectionViewTemplate: 'resource_{{pluralName}}', enableXhr: false, singleView: true, entityDataName: 'doc', collectionDataName: 'docs' });
 
-      var options = { urlPath: '/some_url', entityViewTemplate: 'resources/{{singularName}}', collectionViewTemplate: 'resources/{{pluralName}}', enableXhr: true, singleView: false };
+      var options = { urlPath: '/some_url', entityViewTemplate: 'resources/{{singularName}}', collectionViewTemplate: 'resources/{{pluralName}}', enableXhr: true, singleView: false, entityDataName: 'docabc', collectionDataName: 'docsabc' };
       mongoRest = new MongoRest(app, options, true); // dont register routes
       mongoRest.options.should.eql(options);
 
@@ -64,9 +64,10 @@ describe('MongoRest', function() {
       mongoRest.addResource("user", model1, { sort: [ [ 'name', 1 ] ] });
       mongoRest.addResource("hobby", model2, { pluralName: "hobbies" });
 
-      mongoRest.resources.should.eql([ {
-        singularName: 'user', pluralName: 'users', model: model1, entityViewTemplate: "resource_user", collectionViewTemplate: "resource_users", enableXhr: false, singleView: true, sort: [ [ 'name', 1 ] ]
-      }, { singularName: 'hobby', pluralName: 'hobbies', model: model2, entityViewTemplate: "resource_hobby", collectionViewTemplate: "resource_hobbies", enableXhr: false, singleView: true } ] );
+      mongoRest.resources.should.eql([
+        { singularName: 'user', pluralName: 'users', model: model1, entityViewTemplate: "resource_user", collectionViewTemplate: "resource_users", enableXhr: false, singleView: true, sort: [ [ 'name', 1 ] ], entityDataName: 'doc', collectionDataName: 'docs' },
+        { singularName: 'hobby', pluralName: 'hobbies', model: model2, entityViewTemplate: "resource_hobby", collectionViewTemplate: "resource_hobbies", enableXhr: false, singleView: true, entityDataName: 'doc', collectionDataName: 'docs' }
+      ] );
     });
     it("should take the class config and copy it onto the resource", function() {
       var mongoRest
@@ -77,6 +78,8 @@ describe('MongoRest', function() {
       mongoRest = new MongoRest(app, {
         entityViewTemplate: "/{{singularName}}/bla",
         collectionViewTemplate: "/{{pluralName}}/bla",
+        entityDataName: '{{singularName}}_doc',
+        collectionDataName: '{{pluralName}}_docs',
         enableXhr: true,
         singleView: false
       }, true); // dont register routes
@@ -89,6 +92,8 @@ describe('MongoRest', function() {
         model: model1,
         entityViewTemplate: "/user/bla",
         collectionViewTemplate: "/users/bla",
+        entityDataName: 'user_doc',
+        collectionDataName: 'users_docs',
         enableXhr: true,
         singleView: false
       }]);
@@ -102,6 +107,8 @@ describe('MongoRest', function() {
       mongoRest = new MongoRest(app, {
         entityViewTemplate: "/{{singularName}}/bla",
         collectionViewTemplate: "/{{pluralName}}/bla",
+        entityDataName: "ABC",
+        collectionDataName: "DEF",
         enableXhr: true,
         singleView: false
       }, true); // dont register routes
@@ -109,6 +116,8 @@ describe('MongoRest', function() {
       mongoRest.addResource("user", model1, {
         entityViewTemplate: "/{{singularName}}/bleee",
         collectionViewTemplate: "/{{pluralName}}/bleee",
+        entityDataName: "{{singularName}}_DOC",
+        collectionDataName: "{{pluralName}}_DOC",
         enableXhr: false,
         singleView: true,
         sort: [ [ "test", 1 ]],
@@ -121,6 +130,8 @@ describe('MongoRest', function() {
         model: model1,
         entityViewTemplate: "/user/bleee",
         collectionViewTemplate: "/userers/bleee",
+        entityDataName: "user_DOC",
+        collectionDataName: "userers_DOC",
         enableXhr: false,
         sort: [ [ "test", 1 ]],
         singleView: true
@@ -141,19 +152,20 @@ describe('MongoRest', function() {
       mongoRest.addResource("user", model1);
       mongoRest.addResource("hobby", model2, { pluralName: "hobbies" });
 
-      var hobbyResource = { singularName: 'hobby', pluralName: 'hobbies', model: model2, entityViewTemplate: "resource_hobby", collectionViewTemplate: "resource_hobbies", enableXhr: false, singleView: true };
-      mongoRest.getResource("hobbies").should.eql(hobbyResource);
-      mongoRest.getResource("hobby").should.eql(hobbyResource);
-
-      var userResource = { singularName: 'user', pluralName: 'users', model: model1, entityViewTemplate: "resource_user", collectionViewTemplate: "resource_users", enableXhr: false, singleView: true };
-
+      var userResource = mongoRest.resources[0];
+      // var userResource = { singularName: 'user', pluralName: 'users', model: model1, entityViewTemplate: "resource_user", collectionViewTemplate: "resource_users", enableXhr: false, singleView: true };
       mongoRest.getResource("user").should.eql(userResource);
       mongoRest.getResource("users").should.eql(userResource);
+
+      var hobbyResource = mongoRest.resources[1];
+      // var hobbyResource = { singularName: 'hobby', pluralName: 'hobbies', model: model2, entityViewTemplate: "resource_hobby", collectionViewTemplate: "resource_hobbies", entityViewTemplate: "resource_hobby", collectionViewTemplate: "resource_hobbies", enableXhr: false, singleView: true };
+      mongoRest.getResource("hobbies").should.eql(hobbyResource);
+      mongoRest.getResource("hobby").should.eql(hobbyResource);
 
     });
   });
 
-  describe("parseViewTemplate()", function() {
+  describe("_substituteNames()", function() {
     it("should replace all values properly", function() {
       var mongoRest
         , app = { }
@@ -161,7 +173,7 @@ describe('MongoRest', function() {
 
       mongoRest = new MongoRest(app, null, true); // dont register routes
 
-      mongoRest.parseViewTemplate("abc.{{singularName}}.def.{{pluralName}}", { singularName: 'user', pluralName: 'users' }).should.eql("abc.user.def.users");
+      mongoRest._substituteNames("abc.{{singularName}}.def.{{pluralName}}", { singularName: 'user', pluralName: 'users' }).should.eql("abc.user.def.users");
     });
   });
 

@@ -17,7 +17,9 @@ describe('MongoRest', function() {
               pluralName: 'users',
               model: function() { },
               enableXhr: false,
-              entityViewTemplate: "resource_views/my_lovely_resource_user_show"
+              entityViewTemplate: "resource_views/my_lovely_resource_user_show",
+              entityDataName: 'user_doc',
+              collectionDataName: 'users_docs'
             },
             params: {
               resourceName: 'user'
@@ -42,7 +44,7 @@ describe('MongoRest', function() {
 
       (sentDoc === null).should.be.true;
       renderedView.should.eql("resource_views/my_lovely_resource_user_show");
-      renderedInfo.should.eql({ doc: doc, site: 'user-show' });
+      renderedInfo.should.eql({ user_doc: doc, site: 'user-show' });
 
 
 
@@ -53,7 +55,7 @@ describe('MongoRest', function() {
       mongoRest = new MongoRest({ }, { }, true); // Don't register routes
       mongoRest.renderEntity(doc, req, res, next);
 
-      sentDoc.should.eql({ doc: doc });
+      sentDoc.should.eql({ user_doc: doc });
       (renderedView === null).should.be.true;
       (renderedInfo === null).should.be.true;
 
@@ -67,7 +69,7 @@ describe('MongoRest', function() {
 
       (sentDoc === null).should.be.true;
       renderedView.should.eql("resource_views/my_lovely_resource_user_show");
-      renderedInfo.should.eql({ doc: doc, site: 'user-show' });
+      renderedInfo.should.eql({ user_doc: doc, site: 'user-show' });
 
     });
   });
@@ -146,7 +148,7 @@ describe('MongoRest', function() {
             save: function(callback) { setTimeout(function() { callback(error); }, 1); },
             remove: function(callback) { setTimeout(function() { callback(error); }, 1); }
           }
-        , resource: { singularName: 'user', pluralName: 'users', model: function() { throw new Error(); }, entityViewTemplate: "bla", collectionViewTemplate: "bla", singleView: true }
+        , resource: { singularName: 'user', pluralName: 'users', model: function() { throw new Error(); }, entityViewTemplate: "bla", collectionViewTemplate: "bla", singleView: true, entityDataName: 'doc', collectionDataName: 'docs' }
         , params: { resourceName: 'user' }
       }
       ;

@@ -29,6 +29,11 @@ class MongoRest
     # resources. `{{singularName}}` and `{{pluralName}}` can be used and will
     # be substituted
     collectionViewTemplate: "resource_{{pluralName}}"
+
+    # The name that will be used as index in the template models or JSON.
+    entityDataName: "doc" # You can use {{singularName}} and {{pluralName}} again
+    collectionDataName: "docs"
+
     # Enables a JSON interface for XMLHttpRequests. **Make sure you don't leak
     # important information!**
     enableXhr: false
@@ -98,10 +103,17 @@ class MongoRest
     for key, value of @options
       resource[key] = options[key] ? value unless key == "urlPath"
 
-    resource.entityViewTemplate = @parseViewTemplate resource.entityViewTemplate, resource
-    resource.collectionViewTemplate = @parseViewTemplate resource.collectionViewTemplate, resource
+    resource.entityViewTemplate = @_substituteNames resource.entityViewTemplate, resource
+    resource.collectionViewTemplate = @_substituteNames resource.collectionViewTemplate, resource
+
+    resource.entityDataName = @_substituteNames resource.entityDataName, resource
+    resource.collectionDataName = @_substituteNames resource.collectionDataName, resource
 
     @resources.push resource
+
+  # Parses a string and substitutes singular and plural names.
+  _substituteNames: (str, resource) ->
+    str.replace("{{singularName}}", resource.singularName).replace "{{pluralName}}", resource.pluralName
 
 
   # Returns a resource for a specific name
@@ -205,16 +217,6 @@ class MongoRest
     checkIfFinished()
 
 
-  ###
-  Parses a view template by replacing singular and plural names.
-
-  @param  {String} template
-  @param  {Object} resource
-  @return {String}
-  ###
-  parseViewTemplate: (template, resource) ->
-    template.replace("{{singularName}}", resource.singularName).replace "{{pluralName}}", resource.pluralName
-
 
   ###
   Returns the url for a resource collection
@@ -288,44 +290,32 @@ class MongoRest
   ###
   renderCollection: (docs, req, res, next) ->
     resource = req.resource
+    data = { }
+    data[resource.collectionDataName] = docs
+
     if resource.enableXhr and req.xhr
-      res.send docs: docs
+      res.send data
     else
-      res.render resource.collectionViewTemplate,
-        docs: docs
-        site: req.params.resourceName + "-list"
+      data.site = req.params.resourceName + "-list"
+      res.render resource.collectionViewTemplate, data
 
 
 
-  ###
-  Called to render a collection of docs
-
-  @param  {Object}   err
-  @param  {Object}   req
-  @param  {Object}   res
-  @param  {Function} next
-  @api private
-  ###
+  # Called to render a collection of docs
   renderEntity: (doc, req, res, next) ->
     resource = req.resource
+    data = { }
+    data[resource.entityDataName] = doc
+
     if resource.enableXhr and req.xhr
-      res.send doc: doc
+      res.send data
     else
-      res.render resource.entityViewTemplate,
-        doc: doc
-        site: req.params.resourceName + "-show"
+      data.site = req.params.resourceName + "-show"
+      res.render resource.entityViewTemplate, data
 
 
 
-  ###
-  Called to redirect
-
-  @param  {String}   address
-  @param  {Object}   req
-  @param  {Object}   res
-  @param  {Function} next
-  @api private
-  ###
+  # Called to redirect
   redirect: (address, req, res, next) ->
     resource = req.resource
     if resource.enableXhr and req.xhr
@@ -334,20 +324,13 @@ class MongoRest
       res.redirect address
 
 
-  ###
-  All entities rest functions have to go through this first.
-  This function makes sure the resource is actually served, and
-  puts the right model in the req object
-
-  @return {Function} The function to use as route
-  ###
+  # All entities rest functions have to go through this first.
+  # This function makes sure the resource is actually served, and
+  # puts the right model in the req object
   collection: ->
-    _.bind ((req, res, next) ->
-      unless req.resource = @getResource(req.params.resourceName)
-        next()
-        return
+    (req, res, next) =>
+      req.resource = @getResource(req.params.resourceName)
       next()
-    ), this
 
 
   ###
