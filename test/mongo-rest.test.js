@@ -10,9 +10,9 @@ describe('MongoRest', function() {
         , app = { };
 
       mongoRest = new MongoRest(app, null, true); // dont register routes
-      mongoRest.options.should.eql({ urlPath: '/', entityViewTemplate: 'resource_{{singularName}}', collectionViewTemplate: 'resource_{{pluralName}}', enableXhr: false, singleView: true, entityDataName: 'doc', collectionDataName: 'docs' });
+      mongoRest.options.should.eql({ urlPath: '/', entityViewTemplate: 'resource_{{singularName}}', collectionViewTemplate: 'resource_{{pluralName}}', enableXhr: false, singleView: true, entityDataName: '{{singularName}}', collectionDataName: '{{pluralName}}' });
 
-      var options = { urlPath: '/some_url', entityViewTemplate: 'resources/{{singularName}}', collectionViewTemplate: 'resources/{{pluralName}}', enableXhr: true, singleView: false, entityDataName: 'docabc', collectionDataName: 'docsabc' };
+      var options = { urlPath: '/some_url', entityViewTemplate: 'resources/{{singularName}}', collectionViewTemplate: 'resources/{{pluralName}}', enableXhr: true, singleView: false, entityDataName: '{{singularName}}ABC', collectionDataName: '{{pluralName}}ABC' };
       mongoRest = new MongoRest(app, options, true); // dont register routes
       mongoRest.options.should.eql(options);
 
@@ -65,8 +65,8 @@ describe('MongoRest', function() {
       mongoRest.addResource("hobby", model2, { pluralName: "hobbies" });
 
       mongoRest.resources.should.eql([
-        { singularName: 'user', pluralName: 'users', model: model1, entityViewTemplate: "resource_user", collectionViewTemplate: "resource_users", enableXhr: false, singleView: true, sort: [ [ 'name', 1 ] ], entityDataName: 'doc', collectionDataName: 'docs' },
-        { singularName: 'hobby', pluralName: 'hobbies', model: model2, entityViewTemplate: "resource_hobby", collectionViewTemplate: "resource_hobbies", enableXhr: false, singleView: true, entityDataName: 'doc', collectionDataName: 'docs' }
+        { singularName: 'user', pluralName: 'users', model: model1, sort: [ [ 'name', 1 ] ], entityViewTemplate: "resource_user", collectionViewTemplate: "resource_users", enableXhr: false, singleView: true, entityDataName: 'user', collectionDataName: 'users' },
+        { singularName: 'hobby', pluralName: 'hobbies', model: model2, entityViewTemplate: "resource_hobby", collectionViewTemplate: "resource_hobbies", entityDataName: 'hobby', collectionDataName: 'hobbies', enableXhr: false, singleView: true }
       ] );
     });
     it("should take the class config and copy it onto the resource", function() {

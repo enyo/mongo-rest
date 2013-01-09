@@ -31,8 +31,8 @@ class MongoRest
     collectionViewTemplate: "resource_{{pluralName}}"
 
     # The name that will be used as index in the template models or JSON.
-    entityDataName: "doc" # You can use {{singularName}} and {{pluralName}} again
-    collectionDataName: "docs"
+    entityDataName: "{{singularName}}" # You can use {{singularName}} and {{pluralName}} again
+    collectionDataName: "{{pluralName}}"
 
     # Enables a JSON interface for XMLHttpRequests. **Make sure you don't leak
     # important information!**

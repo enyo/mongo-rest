@@ -74,10 +74,27 @@ The options for MongoRest are:
   `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
 - `entityDataName`
   The name that will be used in the JSON or in the template model. Defaults to
-  `'doc'`.
+  `'{{singularName}}'`.
+  So a JSON might look like this:
+  ```json
+  {
+    "user": {
+      "username": "bla"
+    }
+  }
+  ```
 - `collectionViewTemplate`
   The name that will be used in the JSON or in the template model. Defaults to
-  `'docs'`.
+  `'{{pluralName}}'`.
+  So a JSON might look like this:
+  ```json
+  {
+    "users": [
+      { "username": "bla" },
+      { "username": "bla" }
+    ]
+  }
+  ```
 - `enableXhr` Enables a JSON interface for XMLHttpRequests. **Make sure you don't leak important information!**
 - `singleView` Whether there is a single view or not. If not, only the collection view will be used.
 
