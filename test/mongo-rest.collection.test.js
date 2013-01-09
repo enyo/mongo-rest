@@ -22,8 +22,8 @@ describe('MongoRest', function() {
             , render: function(view, info) { renderedView = view; renderedInfo = info; }
           }
         , next = function() { }
-        , doc1 = new function() { this.doc1 = true }
-        , doc2 = new function() { this.doc2 = true }
+        , doc1 = new function() { this.doc1 = true; var self = this; this.toObject = function() { return self }; }
+        , doc2 = new function() { this.doc2 = true; var self = this; this.toObject = function() { return self }; }
         , docs = [ doc1, doc2 ]
         ;
 
@@ -80,7 +80,8 @@ describe('MongoRest', function() {
         }
       , sortParam = null
       , model = {
-            find: function() { return model; }
+            lean: function() { return model; }
+          ,  find: function() { return model; }
           , sort: function(sort) { sortParam = sort; return model; }
           , exec: exec
         }

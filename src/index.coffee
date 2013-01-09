@@ -260,6 +260,11 @@ class MongoRest
         next err
 
 
+  _getPathName: (model) ->
+
+  _serializeEntityName: (key, resource) ->
+
+
   _serializeKeyName: (key, resource) ->
 
 
@@ -275,7 +280,7 @@ class MongoRest
   renderCollection: (docs, req, res, next) ->
     resource = req.resource
     data = { }
-    data[resource.collectionDataName] = docs
+    data[resource.collectionDataName] = (doc.toObject() for doc in docs)
 
     if resource.enableXhr and req.xhr
       res.send data
@@ -289,7 +294,7 @@ class MongoRest
   renderEntity: (doc, req, res, next) ->
     resource = req.resource
     data = { }
-    data[resource.entityDataName] = doc
+    data[resource.entityDataName] = doc.toObject()
 
     if resource.enableXhr and req.xhr
       res.send data
@@ -317,19 +322,15 @@ class MongoRest
       next()
 
 
-  ###
-  Renders a view with the list of all docs.
-
-  @return {Function} The function to use as route
-  ###
+  # Renders a view with the list of all docs.
   collectionGet: ->
-    _.bind ((req, res, next) ->
+    (req, res, next) =>
       unless req.resource
         next()
         return
       self = this
       query = req.resource.model.find()
-
+      query.lean()
       query.sort req.resource.sort if req.resource.sort
 
       query.exec (err, docs) ->
@@ -345,8 +346,6 @@ class MongoRest
           # That's not a real interceptor, it invokes the get interceptor for each doc.
           self.invokeInterceptors req.resource.singularName, "get-collection", info, req, res, next, finish
 
-    ), this
-
 
   ###
   Handles the new values, and redirects to the list.
@@ -360,10 +359,9 @@ class MongoRest
   @return {Function} The function to use as route
   ###
   collectionPost: ->
-    _.bind ((req, res, next) ->
-      unless req.resource
-        next()
-        return
+    (req, res, next) =>
+      return next() unless req.resource
+        
       self = this
       throw new Error("Nothing submitted.")  if not req.body or not req.body.newResource
       info = values: req.body.newResource
@@ -386,18 +384,14 @@ class MongoRest
             return
           info.doc = doc
           self.invokeInterceptors req.resource.singularName, "post.success", info, req, res, next, (err) ->
-            if err
-              error err
-              return
+            return error err if err
+              
             self.flash "success", "Successfully inserted the record.", req
             if req.resource.enableXhr and req.xhr
               self.renderEntity info.doc, req, res, next
             else
               self.redirect redirectUrl, req, res, next
 
-
-
-    ), this
 
 
   ###
@@ -424,16 +418,13 @@ class MongoRest
     ), this
 
 
-  ###
-  Gets a single entity
-
-  @return {Function} The function to use as route
-  ###
+  # Gets a single entity
+  # 
+  # Returns a function to use as route.
   entityGet: ->
-    _.bind ((req, res, next) ->
-      unless req.resource
-        next()
-        return
+    (req, res, next) =>
+      return next() unless req.resource
+        
       self = this
       info = doc: req.doc
       error = (err) ->
@@ -450,7 +441,6 @@ class MongoRest
         self.renderEntity info.doc, req, res, next
 
       @invokeInterceptors req.resource.singularName, "get", info, req, res, next, onFinish
-    ), this
 
 
   ###
@@ -465,7 +455,7 @@ class MongoRest
   @return {Function} The function to use as route
   ###
   entityPut: ->
-    _.bind ((req, res, next) ->
+    (req, res, next) =>
       return next() unless req.resource
 
       self = this
@@ -499,10 +489,6 @@ class MongoRest
             self.redirect redirectUrl, req, res, next
 
 
-
-    ), this
-
-
   ###
   Deletes the resource.
 
@@ -514,7 +500,7 @@ class MongoRest
   @return {Function} The function to use as route
   ###
   entityDelete: ->
-    _.bind ((req, res, next) ->
+    (req, res, next) =>
       unless req.resource
         next()
         return
@@ -543,9 +529,6 @@ class MongoRest
             self.flash "success", "Successfully deleted the record.", req
             self.redirect redirectUrl, req, res, next
 
-
-
-    ), this
 
 # Exporting the Class
 module.exports = exports = MongoRest

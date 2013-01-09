@@ -5,7 +5,7 @@ var MongoRest = require('../src/index')
 describe('MongoRest', function() {
 
   describe("renderEntity()", function() {
-    it('should render a collection correctly depending on the request', function() {
+    it('should render an entity correctly depending on the request', function() {
       var sentDoc;
       var renderedView, renderedInfo;
 
@@ -30,7 +30,7 @@ describe('MongoRest', function() {
             , render: function(view, info) { renderedView = view; renderedInfo = info; }
           }
         , next = function() { }
-        , doc = new function() { this.doc = true }
+        , doc = new function() { this.doc = true; var self = this; this.toObject = function() { return self }; }
         ;
 
 
