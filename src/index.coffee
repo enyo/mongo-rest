@@ -218,54 +218,35 @@ class MongoRest
 
 
 
-  ###
-  Returns the url for a resource collection
-
-  @param  {Object} resource
-  @return {String}
-  ###
+  # Returns the url for a resource collection
   getCollectionUrl: (resource) ->
     @options.urlPath + resource.pluralName
 
 
-  ###
-  Returns the url for a specific doc
-
-  @param  {Object} resource
-  @param  {Doc} doc
-  @return {String}
-  ###
+  # Returns the url for a specific doc
   getEntityUrl: (resource, doc) ->
     (if resource.singleView then @options.urlPath + resource.singularName + "/" + doc._id else @getCollectionUrl(resource))
 
 
-  ###
-  This only actually flashes if this is not an XHR.
-
-  Forwards to `req.flash()`
-
-  @param  {String} type
-  @param  {String} msg
-  @param  {Req} req
-  ###
+  # This only actually flashes if this is not an XHR.
+  # 
+  # Forwards to `req.flash()`
   flash: (type, msg, req) ->
     req.flash type, msg  if not req.xhr or not req.resource.enableXhr
 
 
-  ###
-  Called when there was an error.
-
-  If there is a redirectUrl (and not XHR), it will redirect there.
-
-  Either calles next with the error or returns it as XMLHttp.
-
-  @param  {Error}   err
-  @param  {String}   Redirect url. If set it will redirect, otherwise call next() with error.
-  @param  {Object}   req
-  @param  {Object}   res
-  @param  {Function} next
-  @api private
-  ###
+  # Called when there was an error.
+  # 
+  # If there is a redirectUrl (and not XHR), it will redirect there.
+  # 
+  # Either calles next with the error or returns it as XMLHttp.
+  # 
+  # @param  {Error}    err
+  # @param  {String}   Redirect url. If set it will redirect, otherwise call next() with error.
+  # @param  {Object}   req
+  # @param  {Object}   res
+  # @param  {Function} next
+  # @api private
   renderError: (err, redirectUrl, req, res, next) ->
     if req.resource.enableXhr and req.xhr
       obj = error: err.message
@@ -277,6 +258,9 @@ class MongoRest
         @redirect redirectUrl, req, res, next
       else
         next err
+
+
+  _serializeKeyName: (key, resource) ->
 
 
   ###
@@ -345,9 +329,8 @@ class MongoRest
         return
       self = this
       query = req.resource.model.find()
-      if req.resource.sort
-        _.each req.resource.sort, (sort) ->
-          query.sort sort[0], sort[1]
+
+      query.sort req.resource.sort if req.resource.sort
 
       query.exec (err, docs) ->
         if err

@@ -78,25 +78,32 @@ describe('MongoRest', function() {
       , exec = function(callback) {
           callback(null, initialDocs);
         }
+      , sortParam = null
       , model = {
             find: function() { return model; }
-          , sort: function() { return model; }
+          , sort: function(sort) { sortParam = sort; return model; }
           , exec: exec
         }
-      , req = { resource: { singularName: 'user', pluralName: 'users', model: model }, params: { resourceName: 'user' } }
+      , req = { resource: { singularName: 'user', pluralName: 'users', model: model, sort: "-name" }, params: { resourceName: 'user' } }
       ;
 
     mongoRest.addResource("user", { });
 
     req.model = model;
 
+    beforeEach(function() {
+      sortParam = null;
+    });
+
     it("should directly render if there are no interceptors", function(done) {
       mongoRest.renderCollection = function(docs) {
+        sortParam.should.eql("-name");
         docs.should.eql(initialDocs);
         done();
       };
 
       mongoRest.collectionGet()(req, { }, { });
+
     });
 
     it("should call all 'get' interceptors and render the entity asynchroniously", function(done) {

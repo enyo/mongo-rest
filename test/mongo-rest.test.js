@@ -61,11 +61,11 @@ describe('MongoRest', function() {
 
       mongoRest = new MongoRest(app, null, true); // dont register routes
 
-      mongoRest.addResource("user", model1, { sort: [ [ 'name', 1 ] ] });
+      mongoRest.addResource("user", model1, { sort: "name" });
       mongoRest.addResource("hobby", model2, { pluralName: "hobbies" });
 
       mongoRest.resources.should.eql([
-        { singularName: 'user', pluralName: 'users', model: model1, sort: [ [ 'name', 1 ] ], entityViewTemplate: "resource_user", collectionViewTemplate: "resource_users", enableXhr: false, singleView: true, entityDataName: 'user', collectionDataName: 'users' },
+        { singularName: 'user', pluralName: 'users', model: model1, sort: "name", entityViewTemplate: "resource_user", collectionViewTemplate: "resource_users", enableXhr: false, singleView: true, entityDataName: 'user', collectionDataName: 'users' },
         { singularName: 'hobby', pluralName: 'hobbies', model: model2, entityViewTemplate: "resource_hobby", collectionViewTemplate: "resource_hobbies", entityDataName: 'hobby', collectionDataName: 'hobbies', enableXhr: false, singleView: true }
       ] );
     });
@@ -120,7 +120,7 @@ describe('MongoRest', function() {
         collectionDataName: "{{pluralName}}_DOC",
         enableXhr: false,
         singleView: true,
-        sort: [ [ "test", 1 ]],
+        sort: "test",
         pluralName: "userers"
       });
 
@@ -133,7 +133,7 @@ describe('MongoRest', function() {
         entityDataName: "user_DOC",
         collectionDataName: "userers_DOC",
         enableXhr: false,
-        sort: [ [ "test", 1 ]],
+        sort: "test",
         singleView: true
       }]);
     });
