@@ -143,7 +143,7 @@ class MongoRest
   # @param {String} event
   # @param {Function} handler
   addInterceptor: (resourceName, event, handler) ->
-    resource = @getResource(resourceName)
+    resource = @getResource resourceName
     interceptors = @interceptors
     throw new Error("The resource " + resourceName + " is not defined!")  unless resource
     resourceName = resource.singularName
