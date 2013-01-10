@@ -6,7 +6,8 @@
   , "main": "./index.js"
   , "private": false
   , "dependencies": {
-      "underscore": "1.x"
+      "underscore": "1.x",
+      "inflection": "1.x"
     }
   , "devDependencies": {
       "mocha": "*",

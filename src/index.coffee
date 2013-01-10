@@ -4,13 +4,14 @@
 
 # Module dependencies.
 _ = require "underscore"
+inflection = require "inflection"
 
 
 # The models for which there will be a rest interface
 # 
 # `options` can have following values:
 # 
-# - `urlPath` The path prefix for the rest resources. Default to `/`
+# - `pathPrefix` The path prefix for the rest resources. Default to `/`
 # - `entityViewTemplate` The template that will be used as view name to render entity resources. `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
 # - `collectionViewTemplate` The template that will be used as view name to render collection resources. `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
 # - `enableXhr` Enables a JSON interface for XMLHttpRequests. **Make sure you don't leak important information!**
@@ -19,20 +20,36 @@ _ = require "underscore"
 class MongoRest
 
   defaultOptions:
-    # The path prefix for the rest resources.
-    urlPath: "/"
-    # The template that will be used as view name to render entity resources.
-    # `{{singularName}}` and `{{pluralName}}` can be used and will be
-    # substituted
-    entityViewTemplate: "resource_{{singularName}}"
-    # The template that will be used as view name to render collection
-    # resources. `{{singularName}}` and `{{pluralName}}` can be used and will
-    # be substituted
-    collectionViewTemplate: "resource_{{pluralName}}"
+    # The URL root
+    urlRoot: "/"
 
-    # The name that will be used as index in the template models or JSON.
-    entityDataName: "{{singularName}}" # You can use {{singularName}} and {{pluralName}} again
-    collectionDataName: "{{pluralName}}"
+    # The path prefix for the rest resources.
+    pathPrefix: ""
+
+    # The path prefix for the rest resources.
+    pathSuffix: ""
+
+    # Will be prepended to the template name
+    viewPrefix: "resource_"
+
+    # Will be appended to the template name
+    viewSuffix: ""
+
+    # Will be prepended to the data index
+    viewDataNamePrefix: ""
+
+    # Will be appended to the data index
+    viewDataNameSuffix: ""
+
+    # Goes through the *whole* (even the data name) JSON array and converts the
+    # keys to camelized if yes
+    camelizeJSONDataKeys: yes
+
+    # Will be prepended to the data index
+    JSONDataNamePrefix: ""
+
+    # Will be appended to the data index
+    JSONDataNameSuffix: ""
 
     # Enables a JSON interface for XMLHttpRequests. **Make sure you don't leak
     # important information!**
@@ -61,70 +78,100 @@ class MongoRest
   # Registers all REST routes with the provided `app` object.
   registerRoutes: ->
     
-    ###
-    Accessing multiple resources
-    ###
+    # Accessing multiple resources
     
     # This makes sure the resource actually exists and prepares the model for the `get` and `post` actions.
-    @app.all @options.urlPath + ":resourceName", @collection()
-    @app.get @options.urlPath + ":resourceName", @collectionGet()
-    @app.post @options.urlPath + ":resourceName", @collectionPost()
+    @app.all @options.urlRoot + ":resourceName", @collection()
+    @app.get @options.urlRoot + ":resourceName", @collectionGet()
+    @app.post @options.urlRoot + ":resourceName", @collectionPost()
     
-    ###
-    Accessing single entities
-    ###
+    # Accessing single entities
     
     # This makes sure the resource exists, and loads the model for the `get`, `put` and `delete` actions.
-    @app.all @options.urlPath + ":resourceName/:id", @entity()
-    @app.get @options.urlPath + ":resourceName/:id", @entityGet()
-    @app.put @options.urlPath + ":resourceName/:id", @entityPut()
-    @app["delete"] @options.urlPath + ":resourceName/:id", @entityDelete()
+    @app.all @options.urlRoot + ":resourceName/:id", @entity()
+    @app.get @options.urlRoot + ":resourceName/:id", @entityGet()
+    @app.put @options.urlRoot + ":resourceName/:id", @entityPut()
+    @app["delete"] @options.urlRoot + ":resourceName/:id", @entityDelete()
 
+
+  # Returns the dashed plural version of the model by default.
+  # You can overwrite this function if you want another behaviour.
+  getPathName: (resource) ->
+    model = resource.model
+    (@options.pathPrefix ? "") + (inflection.underscore inflection.pluralize model.modelName).toLowerCase().replace("_", "-") + (@options.pathSuffix ? "")
+
+  # Returns the view for given model.
+  getView: (resource, collection = no) ->
+    model = resource.model
+    view =  if collection then inflection.pluralize model.modelName else model.modelName
+    view = inflection.underscore(view).toLowerCase()
+    @options.viewPrefix + view + @options.viewSuffix
+
+  # Returns the data name for given model to be used in the views model
+  getViewDataName: (resource, collection = no) ->
+    model = resource.model
+    dataName =  if collection then inflection.pluralize model.modelName else model.modelName
+    dataName = dataName.charAt(0).toLowerCase() + dataName.slice(1);
+    @options.viewDataNamePrefix + dataName + @options.viewDataNameSuffix
+
+  # Returns the data name for given model to be used in JSON
+  getJSONDataName: (resource, collection = no) ->
+    model = resource.model
+    dataName =  if collection then inflection.pluralize model.modelName else model.modelName
+    dataName = dataName.charAt(0).toLowerCase() + dataName.slice(1);
+    @options.JSONDataNamePrefix + dataName + @options.JSONDataNameSuffix
 
   # Adds a model to be served as rest.
   # 
-  # - singularName E.g.: `'user'`
   # - mongoose model
   # - options. Can be:
-  #   - pluralName
+  #   - entityView
+  #   - collectionView
+  #   - entityViewDataName
+  #   - collectionViewDataName
+  #   - entityViewJSONName
+  #   - collectionViewJSONName
   #   - sort the default value to sort by
-  #   - ...all defaultOptions can be overriden here, except for urlPath
-  addResource: (singularName, model, options = { }) ->
-    pluralName = pluralName or singularName + "s"
-    resource =
-      singularName: singularName
-      pluralName: options.pluralName ? singularName + "s"
-      model: model
+  #   - ...all defaultOptions can be overriden here, except for urlRoot
+  addResource: (model, options = { }) ->
+    resource = model: model
 
     resource.sort = options.sort if options.sort?
 
-    throw new Exception("The singular and plural name have to be different.")  if resource.pluralName is resource.singularName
-
     for key, value of @options
-      resource[key] = options[key] ? value unless key == "urlPath"
+      resource[key] = options[key] ? value unless key == "urlRoot"
 
-    resource.entityViewTemplate = @_substituteNames resource.entityViewTemplate, resource
-    resource.collectionViewTemplate = @_substituteNames resource.collectionViewTemplate, resource
+    resource.pathName = @getPathName resource
 
-    resource.entityDataName = @_substituteNames resource.entityDataName, resource
-    resource.collectionDataName = @_substituteNames resource.collectionDataName, resource
+    resource.entityView = options.entityView ? @getView resource
+    resource.collectionView = options.collectionView ? @getView resource, yes
+
+    resource.entityViewDataName = options.entityViewDataName ? @getViewDataName resource
+    resource.collectionViewDataName = options.collectionViewDataName ? @getViewDataName resource, yes
+
+    resource.entityJSONDataName = options.entityJSONDataName ? @getJSONDataName resource
+    resource.collectionJSONDataName = options.collectionJSONDataName ? @getJSONDataName resource, yes
 
     @resources.push resource
-
-  # Parses a string and substitutes singular and plural names.
-  _substituteNames: (str, resource) ->
-    str.replace("{{singularName}}", resource.singularName).replace "{{pluralName}}", resource.pluralName
+    resource
 
 
   # Returns a resource for a specific name
   #
   # It checks the resources for singular and plural names!
   #
-  # @param  {String} name Singular or plural
-  # @return {Model} null if there is no such resource
-  getResource: (name) ->
-    _.find @resources, (resource) ->
-      resource.pluralName is name or resource.singularName is name
+  # @param  {String} pathOrModel
+  # @return {Object} null if there is no such resource
+  getResource: (pathOrModel) ->
+    if typeof pathOrModel == "string"
+      pathName = pathOrModel
+    else
+      model = pathOrModel
+
+    for resource in @resources
+      return resource if resource.pathName == pathName or resource.model == model
+
+    null
 
 
 
@@ -139,11 +186,11 @@ class MongoRest
   # - `res`
   # - `next`
   # 
-  # @param {String} resourceName
+  # @param {Model} model
   # @param {String} event
   # @param {Function} handler
-  addInterceptor: (resourceName, event, handler) ->
-    resource = @getResource resourceName
+  addInterceptor: (model, event, handler) ->
+    resource = @getResource model
     interceptors = @interceptors
     throw new Error("The resource " + resourceName + " is not defined!")  unless resource
     resourceName = resource.singularName
@@ -220,12 +267,14 @@ class MongoRest
 
   # Returns the url for a resource collection
   getCollectionUrl: (resource) ->
-    @options.urlPath + resource.pluralName
+    @options.urlRoot + resource.pathName
 
 
   # Returns the url for a specific doc
   getEntityUrl: (resource, doc) ->
-    (if resource.singleView then @options.urlPath + resource.singularName + "/" + doc._id else @getCollectionUrl(resource))
+    return @getCollectionUrl resource unless resource.singleView
+    @options.urlRoot + resource.pathName + "/" + doc._id
+      
 
 
   # This only actually flashes if this is not an XHR.
@@ -318,7 +367,7 @@ class MongoRest
   # puts the right model in the req object
   collection: ->
     (req, res, next) =>
-      req.resource = @getResource(req.params.resourceName)
+      req.resource = @getResource req.params.resourceName
       next()
 
 
@@ -394,16 +443,12 @@ class MongoRest
 
 
 
-  ###
-  All entity rest functions have to go through this first.
-  This function is in charge of loading the entity.
-
-  @return {Function} The function to use as route
-  ###
+  # All entity rest functions have to go through this first.
+  # This function is in charge of loading the entity.
   entity: ->
-    _.bind ((req, res, next) ->
+    (req, res, next) =>
       self = this
-      unless req.resource = @getResource(req.params.resourceName)
+      unless req.resource = @getResource req.params.resourceName
         next()
         return
       req.resource.model.findOne
@@ -414,8 +459,6 @@ class MongoRest
           return
         req.doc = doc
         next()
-
-    ), this
 
 
   # Gets a single entity

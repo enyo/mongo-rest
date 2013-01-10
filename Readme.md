@@ -65,7 +65,7 @@ var MongoRest = require('mongo-rest')
 
 The options for MongoRest are:
 
-- `urlPath` The path prefix for the rest resources. Default to `/`
+- `pathPrefix` The path prefix for the rest resources. Default to `/`
 - `entityViewTemplate`
   The template that will be used as view name to render entity resources.
   `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
@@ -105,7 +105,7 @@ var mongoRest = new (require('mongo-rest'))(app, options);
 ```
 
 When instantiated, MongoREST registers the routes with the `app` so that all REST routes
-become accessible. If you provided `'/resources/'` as `urlPath` then following urls will
+become accessible. If you provided `'/resources/'` as `pathPrefix` then following urls will
 become alive for the `user` resource:
 
     GET: /resources/users (Renders a list of all users)
