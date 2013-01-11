@@ -12,8 +12,8 @@ inflection = require "inflection"
 # `options` can have following values:
 # 
 # - `pathPrefix` The path prefix for the rest resources. Default to `/`
-# - `entityViewTemplate` The template that will be used as view name to render entity resources. `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
-# - `collectionViewTemplate` The template that will be used as view name to render collection resources. `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
+# - `entityView` The template that will be used as view name to render entity resources. `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
+# - `collectionView` The template that will be used as view name to render collection resources. `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
 # - `enableXhr` Enables a JSON interface for XMLHttpRequests. **Make sure you don't leak important information!**
 # - `singleView` Whether there is a single view or not. If not, only the collection view will be used.
 
@@ -187,18 +187,22 @@ class MongoRest
   # - `next`
   # 
   # @param {Model} model
-  # @param {String} event
+  # @param {String} eventOrEvents
   # @param {Function} handler
-  addInterceptor: (model, event, handler) ->
-    resource = @getResource model
-    interceptors = @interceptors
-    throw new Error("The resource " + resourceName + " is not defined!")  unless resource
-    resourceName = resource.singularName
-    event = [event]  unless _.isArray(event)
-    _.each event, (event) ->
-      interceptors[resourceName] = {}  unless interceptors[resourceName]
-      interceptors[resourceName][event] = []  unless interceptors[resourceName][event]
-      interceptors[resourceName][event].push handler
+  addInterceptor: (model, eventOrEvents, handler) ->
+
+    # Check that the resource has already been defined.
+    throw new Error("The resource #{model.modelName} is not defined!") unless @getResource model
+
+    modelName = model.modelName
+
+    # Make sure it's an array
+    events = [ ].concat eventOrEvents
+
+    for event in events
+      @interceptors[modelName] = { }  unless @interceptors[modelName]
+      @interceptors[modelName][event] = [ ]  unless @interceptors[modelName][event]
+      @interceptors[modelName][event].push handler
 
 
 
@@ -207,7 +211,7 @@ class MongoRest
   # 
   # The event `get-collection` is a special event that fires the `get` event for each document that has been fetched.
   # 
-  # @param {String} singularResourceName
+  # @param {String} model
   # @param {String} event
   # @param {Object} info
   # @param {Request} req
@@ -215,26 +219,31 @@ class MongoRest
   # @param {Function} next
   # @param {Function} next
   # @param {Function} onFinish Called when all (if any) interceptors finished.
-  invokeInterceptors: (singularResourceName, event, info, req, res, next, onFinish) ->
-    interceptors = @interceptors
+  invokeInterceptors: (model, event, info, req, res, next, onFinish) ->
+
+    modelName = model.modelName
+
     realEvent = event
     
     # get-collection is a pseudo event which triggers the get event for each doc individually
-    event = "get"  if event is "get-collection"
-    if not interceptors[singularResourceName] or not interceptors[singularResourceName][event]
-      onFinish()
-      return
+    event = "get" if event is "get-collection"
+
+    # There are no interceptors for this particular model & event
+    return onFinish() unless @interceptors[modelName]?[event]
+      
+      
     finishedInvoking = false
     interceptorCount = 0
     finishedInterceptors = 0
     error = null
+
     checkIfFinished = ->
-      onFinish()  if not error and finishedInvoking and (finishedInterceptors is interceptorCount)
+      onFinish() if not error and finishedInvoking and (finishedInterceptors is interceptorCount)
 
     done = (err) ->
       
       # If an error already occured, ignore the other interceptors.
-      return  if error
+      return if error
       if err
         error = err
         onFinish err
@@ -244,7 +253,7 @@ class MongoRest
 
     
     # Using all so it's possible to break the loop if an error occurs.
-    _.all interceptors[singularResourceName][event], (interceptor) ->
+    _.all @interceptors[modelName][event], (interceptor) ->
       if realEvent isnt "get-collection"
         interceptorCount++
         interceptor info, done, req, res, next
@@ -329,13 +338,14 @@ class MongoRest
   renderCollection: (docs, req, res, next) ->
     resource = req.resource
     data = { }
-    data[resource.collectionDataName] = (doc.toObject() for doc in docs)
 
     if resource.enableXhr and req.xhr
+      data[resource.collectionJSONDataName] = (doc.toObject() for doc in docs)
       res.send data
     else
+      data[resource.collectionViewDataName] = (doc.toObject() for doc in docs)
       data.site = req.params.resourceName + "-list"
-      res.render resource.collectionViewTemplate, data
+      res.render resource.collectionView, data
 
 
 
@@ -343,13 +353,14 @@ class MongoRest
   renderEntity: (doc, req, res, next) ->
     resource = req.resource
     data = { }
-    data[resource.entityDataName] = doc.toObject()
 
     if resource.enableXhr and req.xhr
+      data[resource.entityJSONDataName] = doc.toObject()
       res.send data
     else
+      data[resource.entityViewDataName] = doc.toObject()
       data.site = req.params.resourceName + "-show"
-      res.render resource.entityViewTemplate, data
+      res.render resource.entityView, data
 
 
 
@@ -374,26 +385,20 @@ class MongoRest
   # Renders a view with the list of all docs.
   collectionGet: ->
     (req, res, next) =>
-      unless req.resource
-        next()
-        return
-      self = this
+      return next() unless req.resource
+        
       query = req.resource.model.find()
       query.lean()
       query.sort req.resource.sort if req.resource.sort
 
-      query.exec (err, docs) ->
-        if err
-          self.renderError err, null, req, res, next
-          return
-        else
-          info = docs: docs
-          finish = ->
-            self.renderCollection docs, req, res, next
-
+      query.exec (err, docs) =>
+        return @renderError err, null, req, res, next if err
           
-          # That's not a real interceptor, it invokes the get interceptor for each doc.
-          self.invokeInterceptors req.resource.singularName, "get-collection", info, req, res, next, finish
+        info = docs: docs
+        finish = => @renderCollection docs, req, res, next
+        
+        # That's not a real interceptor, it invokes the get interceptor for each doc.
+        @invokeInterceptors req.resource.model, "get-collection", info, req, res, next, finish
 
 
   ###
@@ -417,12 +422,12 @@ class MongoRest
       redirectUrl = self.getCollectionUrl(req.resource)
       error = (err) ->
         info.err = err
-        self.invokeInterceptors req.resource.singularName, "post.error", info, req, res, next, (interceptorErr) ->
+        self.invokeInterceptors req.resource.model, "post.error", info, req, res, next, (interceptorErr) ->
           finalErr = interceptorErr or err
           self.renderError new Error("Unable to insert the record: " + finalErr.message), redirectUrl, req, res, next
 
 
-      @invokeInterceptors req.resource.singularName, "post", info, req, res, next, (err) ->
+      @invokeInterceptors req.resource.model, "post", info, req, res, next, (err) ->
         if err
           error err
           return
@@ -432,7 +437,7 @@ class MongoRest
             error err
             return
           info.doc = doc
-          self.invokeInterceptors req.resource.singularName, "post.success", info, req, res, next, (err) ->
+          self.invokeInterceptors req.resource.model, "post.success", info, req, res, next, (err) ->
             return error err if err
               
             self.flash "success", "Successfully inserted the record.", req
@@ -472,7 +477,7 @@ class MongoRest
       info = doc: req.doc
       error = (err) ->
         info.err = err
-        self.invokeInterceptors req.resource.singularName, "get.error", info, req, res, next, (interceptorErr) ->
+        self.invokeInterceptors req.resource.model, "get.error", info, req, res, next, (interceptorErr) ->
           finalErr = interceptorErr or err
           self.renderError new Error("Unable to get the record: " + finalErr.message), null, req, res, next
 
@@ -483,7 +488,7 @@ class MongoRest
           return
         self.renderEntity info.doc, req, res, next
 
-      @invokeInterceptors req.resource.singularName, "get", info, req, res, next, onFinish
+      @invokeInterceptors req.resource.model, "get", info, req, res, next, onFinish
 
 
   ###
@@ -511,12 +516,12 @@ class MongoRest
 
       error = (err) ->
         info.err = err
-        self.invokeInterceptors req.resource.singularName, "put.error", info, req, res, next, (interceptorErr) ->
+        self.invokeInterceptors req.resource.model, "put.error", info, req, res, next, (interceptorErr) ->
           finalErr = interceptorErr or err
           self.renderError new Error("Unable to save the record: " + finalErr.message), redirectUrl, req, res, next
 
 
-      @invokeInterceptors req.resource.singularName, "put", info, req, res, next, (err) ->
+      @invokeInterceptors req.resource.model, "put", info, req, res, next, (err) ->
         return error err if err?
           
         _.each info.values, (value, name) ->
@@ -525,7 +530,7 @@ class MongoRest
         req.doc.save (err) ->
           return error err if err?
             
-          self.invokeInterceptors req.resource.singularName, "put.success", info, req, res, next, (err) ->
+          self.invokeInterceptors req.resource.model, "put.success", info, req, res, next, (err) ->
             return error err if err?
               
             self.flash "success", "Successfully updated the record.", req
@@ -552,12 +557,12 @@ class MongoRest
       redirectUrl = self.getCollectionUrl(req.resource)
       error = (err) ->
         info.err = err
-        self.invokeInterceptors req.resource.singularName, "delete.error", info, req, res, next, (interceptorErr) ->
+        self.invokeInterceptors req.resource.model, "delete.error", info, req, res, next, (interceptorErr) ->
           finalErr = interceptorErr or err
           self.renderError new Error("Unable to delete the record: " + finalErr.message), redirectUrl, req, res, next
 
 
-      @invokeInterceptors req.resource.singularName, "delete", info, req, res, next, (err) ->
+      @invokeInterceptors req.resource.model, "delete", info, req, res, next, (err) ->
         if err
           error err
           return
@@ -565,7 +570,7 @@ class MongoRest
           if err
             error err
             return
-          self.invokeInterceptors req.resource.singularName, "delete.success", info, req, res, next, (err) ->
+          self.invokeInterceptors req.resource.model, "delete.success", info, req, res, next, (err) ->
             if err
               error err
               return
