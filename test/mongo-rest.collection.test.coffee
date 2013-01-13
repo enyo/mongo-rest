@@ -5,21 +5,25 @@ describe "MongoRest", ->
   app = { }
 
   exec = ->
-
-  userModel =
-    modelName: "User"
-    lean: -> userModel
-    find: -> userModel
-    sort: (sort) ->
-      userModelSortParam = sort
-      userModel
-    exec: exec
-
-
   userModelSortParam = null
+  saveError = null
+
+  class userModel
+    save: (callback) -> setTimeout (-> callback saveError), 1
+
+  userModel.modelName = "User"
+  userModel.lean = -> userModel
+  userModel.find = -> userModel
+  userModel.sort = (sort) ->
+    userModelSortParam = sort
+    userModel
+  userModel.exec = (args...) -> exec args...
+
+
 
   afterEach ->
     exec = ->
+    saveError = null
     userModelSortParam = null
 
 
@@ -125,8 +129,9 @@ describe "MongoRest", ->
       @doc2 = true
 
     initialDocs = [doc1, doc2]
-    exec = (callback) ->
-      callback null, initialDocs
+    beforeEach ->
+      exec = (callback) ->
+        callback null, initialDocs
 
     req =
       resource:
@@ -197,18 +202,18 @@ describe "MongoRest", ->
           some: "values"
 
       resource:
-        singularName: "user"
-        pluralName: "users"
-        model: -> emptyDoc
+        model: userModel
+        pathName: "users"
+        sort: "-name"
 
       params:
-        resourceName: "user"
+        resourceName: "users"
 
       flash: ->
 
     beforeEach ->
       mongoRest = new MongoRest({}, null, true) # Don't register routes
-      mongoRest.addResource { modelName: "user" }
+      mongoRest.addResource userModel
 
     it "should call the 'post' and 'post.success' event interceptors on success", (done) ->
       interceptorList = []
@@ -217,10 +222,10 @@ describe "MongoRest", ->
           interceptorList.push intName
           setTimeout iDone, 1
 
-      mongoRest.addInterceptor "user", "post", interceptor("firstPost")
-      mongoRest.addInterceptor "user", "post", interceptor("secondPost")
-      mongoRest.addInterceptor "user", "post.success", interceptor("post.success")
-      mongoRest.addInterceptor "user", "post.error", interceptor("post.error")
+      mongoRest.addInterceptor userModel, "post", interceptor("firstPost")
+      mongoRest.addInterceptor userModel, "post", interceptor("secondPost")
+      mongoRest.addInterceptor userModel, "post.success", interceptor("post.success")
+      mongoRest.addInterceptor userModel, "post.error", interceptor("post.error")
       res = redirect: (address) ->
         address.should.equal "/users"
         interceptorList.should.eql ["firstPost", "secondPost", "post.success"]
@@ -232,10 +237,7 @@ describe "MongoRest", ->
       mongoRest.flash = (type, message) ->
         true.should.be["false"]
 
-      emptyDoc = save: (callback) ->
-        setTimeout (->
-          callback new Error("Some Error")
-        ), 1
+      saveError = new Error("Some Error")
 
       interceptorList = []
       interceptor = (intName) ->
@@ -243,10 +245,10 @@ describe "MongoRest", ->
           interceptorList.push intName
           setTimeout iDone, 1
 
-      mongoRest.addInterceptor "user", "post", interceptor("firstPost")
-      mongoRest.addInterceptor "user", "post", interceptor("secondPost")
-      mongoRest.addInterceptor "user", "post.success", interceptor("post.success")
-      mongoRest.addInterceptor "user", "post.error", interceptor("post.error")
+      mongoRest.addInterceptor userModel, "post", interceptor("firstPost")
+      mongoRest.addInterceptor userModel, "post", interceptor("secondPost")
+      mongoRest.addInterceptor userModel, "post.success", interceptor("post.success")
+      mongoRest.addInterceptor userModel, "post.error", interceptor("post.error")
       mongoRest.renderError = (err, address, req, res, next) ->
         err.message.should.equal "Unable to insert the record: Some Error"
         address.should.equal "/users"
@@ -259,10 +261,6 @@ describe "MongoRest", ->
       mongoRest.flash = (type, message) ->
         true.should.be["false"]
 
-      emptyDoc = save: (callback) ->
-        setTimeout (->
-          callback()
-        ), 1
 
       interceptorList = []
       interceptor = (intName) ->
@@ -270,13 +268,13 @@ describe "MongoRest", ->
           interceptorList.push intName
           setTimeout iDone, 1
 
-      mongoRest.addInterceptor "user", "post", interceptor("firstPost")
-      mongoRest.addInterceptor "user", "post", (info, iDone) ->
+      mongoRest.addInterceptor userModel, "post", interceptor("firstPost")
+      mongoRest.addInterceptor userModel, "post", (info, iDone) ->
         iDone new Error("interceptor error")
 
-      mongoRest.addInterceptor "user", "post", interceptor("secondPost")
-      mongoRest.addInterceptor "user", "post.success", interceptor("post.success")
-      mongoRest.addInterceptor "user", "post.error", interceptor("post.error")
+      mongoRest.addInterceptor userModel, "post", interceptor("secondPost")
+      mongoRest.addInterceptor userModel, "post.success", interceptor("post.success")
+      mongoRest.addInterceptor userModel, "post.error", interceptor("post.error")
       mongoRest.renderError = (err, address, req, res, next) ->
         err.message.should.equal "Unable to insert the record: interceptor error"
         address.should.equal "/users"
@@ -289,22 +287,17 @@ describe "MongoRest", ->
       mongoRest.flash = (type, message) ->
         true.should.be["false"]
 
-      emptyDoc = save: (callback) ->
-        setTimeout (->
-          callback()
-        ), 1
-
       interceptorList = []
       interceptor = (intName) ->
         (info, iDone) ->
           interceptorList.push intName
           setTimeout iDone, 1
 
-      mongoRest.addInterceptor "user", "post", interceptor("firstPost")
-      mongoRest.addInterceptor "user", "post", interceptor("secondPost")
-      mongoRest.addInterceptor "user", "post.success", interceptor("post.success")
-      mongoRest.addInterceptor "user", "post.error", interceptor("post.error")
-      mongoRest.addInterceptor "user", "post.success", (info, iDone) ->
+      mongoRest.addInterceptor userModel, "post", interceptor("firstPost")
+      mongoRest.addInterceptor userModel, "post", interceptor("secondPost")
+      mongoRest.addInterceptor userModel, "post.success", interceptor("post.success")
+      mongoRest.addInterceptor userModel, "post.error", interceptor("post.error")
+      mongoRest.addInterceptor userModel, "post.success", (info, iDone) ->
         iDone new Error("interceptor error")
 
       mongoRest.renderError = (err, address, req, res, next) ->

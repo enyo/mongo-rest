@@ -231,7 +231,6 @@ class MongoRest
     # There are no interceptors for this particular model & event
     return onFinish() unless @interceptors[modelName]?[event]
       
-      
     finishedInvoking = false
     interceptorCount = 0
     finishedInterceptors = 0
@@ -401,17 +400,13 @@ class MongoRest
         @invokeInterceptors req.resource.model, "get-collection", info, req, res, next, finish
 
 
-  ###
-  Handles the new values, and redirects to the list.
-
-  It invokes the `post` interceptors. The info object consists of:
-
-  - `values` The new values that are about to be inserted. You can set a new object and it will be used.
-  - `doc` Only for `success` or `error` interceptors. The document that was just inserted.
-  - `err` The exception, only for error interceptors.
-
-  @return {Function} The function to use as route
-  ###
+  # Handles the new values, and redirects to the list.
+  # 
+  # It invokes the `post` interceptors. The info object consists of:
+  # 
+  # - `values` The new values that are about to be inserted. You can set a new object and it will be used.
+  # - `doc` Only for `success` or `error` interceptors. The document that was just inserted.
+  # - `err` The exception, only for error interceptors.
   collectionPost: ->
     (req, res, next) =>
       return next() unless req.resource
@@ -426,16 +421,14 @@ class MongoRest
           finalErr = interceptorErr or err
           self.renderError new Error("Unable to insert the record: " + finalErr.message), redirectUrl, req, res, next
 
-
       @invokeInterceptors req.resource.model, "post", info, req, res, next, (err) ->
-        if err
-          error err
-          return
+        return error err if err
+          
         doc = new req.resource.model(info.values)
+
         doc.save (err) ->
-          if err
-            error err
-            return
+          return error err if err
+
           info.doc = doc
           self.invokeInterceptors req.resource.model, "post.success", info, req, res, next, (err) ->
             return error err if err
