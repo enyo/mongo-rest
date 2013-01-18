@@ -1,4 +1,4 @@
-# MongoREST Version 2.1.5
+# MongoREST Version 3.0.0
 
 ![Build status](https://travis-ci.org/enyo/mongo-rest.png)
 
@@ -65,11 +65,38 @@ var MongoRest = require('mongo-rest')
 
 The options for MongoRest are:
 
-  - `urlPath` The path prefix for the rest resources. Default to `/`
-  - `entityViewTemplate` The template that will be used as view name to render entity resources. `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
-  - `collectionViewTemplate` The template that will be used as view name to render collection resources. `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
-  - `enableXhr` Enables a JSON interface for XMLHttpRequests. **Make sure you don't leak important information!**
-  - `singleView` Whether there is a single view or not. If not, only the collection view will be used.
+- `pathPrefix` The path prefix for the rest resources. Default to `/`
+- `entityViewTemplate`
+  The template that will be used as view name to render entity resources.
+  `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
+- `collectionViewTemplate`
+  The template that will be used as view name to render collection resources.
+  `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
+- `entityDataName`
+  The name that will be used in the JSON or in the template model. Defaults to
+  `'{{singularName}}'`.
+  So a JSON might look like this:
+  ```json
+  {
+    "user": {
+      "username": "bla"
+    }
+  }
+  ```
+- `collectionViewTemplate`
+  The name that will be used in the JSON or in the template model. Defaults to
+  `'{{pluralName}}'`.
+  So a JSON might look like this:
+  ```json
+  {
+    "users": [
+      { "username": "bla" },
+      { "username": "bla" }
+    ]
+  }
+  ```
+- `enableXhr` Enables a JSON interface for XMLHttpRequests. **Make sure you don't leak important information!**
+- `singleView` Whether there is a single view or not. If not, only the collection view will be used.
 
 As a one liner it looks like this:
 
@@ -78,7 +105,7 @@ var mongoRest = new (require('mongo-rest'))(app, options);
 ```
 
 When instantiated, MongoREST registers the routes with the `app` so that all REST routes
-become accessible. If you provided `'/resources/'` as `urlPath` then following urls will
+become accessible. If you provided `'/resources/'` as `pathPrefix` then following urls will
 become alive for the `user` resource:
 
     GET: /resources/users (Renders a list of all users)
@@ -88,6 +115,10 @@ become alive for the `user` resource:
     PUT: /resources/user/12345 (Updates the user with ID 12345)
     DELETE: /resources/user/12345 (Deletes the user with ID 12345)
 
+
+> **Note:** `/user` and `/users` are always both valid. So you can always access
+> your records on the plural or singular URLs. It's up to you.
+
 ### 2. Adding a mongoose model as resource
 
 To tell `mongo-rest` which resources it should support you simple add each [mongoose model].
@@ -96,10 +127,16 @@ forward:
 
 ```js
 mongoRest.addResource('user', require('../models/user'));
-// Or for irregular plurals:
-mongoRest.addResource('hobby', require('../models/user'), 'hobbies');
-// Default sorting:
-mongoRest.addResource('user', require('../models/user'), null, [ [ "name", 1 ], [ "username", 1 ] ]);
+// And you can pass options:
+mongoRest.addResource('hobby', require('../models/user'), {
+  pluralName: 'hobbies', // for irregular plurals
+  sort: "name username -birthdate", // Default sorting
+  // And all class options can be used here to be overriden for this resource:
+  entityViewTemplate: "my_cool_template",
+  collectionViewTemplate: "my_awesome_records_template",
+  enableXhr: false,
+  singleView: true
+});
 ```
 
 That's it. Now MongoREST nows that it has to use those models whenever the resources `users`
