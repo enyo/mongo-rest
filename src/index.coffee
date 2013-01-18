@@ -387,7 +387,6 @@ class MongoRest
       return next() unless req.resource
         
       query = req.resource.model.find()
-      query.lean()
       query.sort req.resource.sort if req.resource.sort
 
       query.exec (err, docs) =>
