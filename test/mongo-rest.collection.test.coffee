@@ -12,7 +12,6 @@ describe "MongoRest", ->
     save: (callback) -> setTimeout (-> callback saveError), 1
 
   userModel.modelName = "User"
-  userModel.lean = -> userModel
   userModel.find = -> userModel
   userModel.sort = (sort) ->
     userModelSortParam = sort
