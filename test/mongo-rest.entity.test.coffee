@@ -163,7 +163,7 @@ describe "MongoRest", ->
     error = undefined
     req =
       body:
-        newResource:
+        user:
           some: "values"
 
       doc:
@@ -180,6 +180,7 @@ describe "MongoRest", ->
 
       resource:
         model: userModel
+        entityJSONDataName: "user"
         singleView: yes
         pathName: "users"
 

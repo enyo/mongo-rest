@@ -197,13 +197,14 @@ describe "MongoRest", ->
 
     req =
       body:
-        newResource:
+        user:
           some: "values"
 
       resource:
         model: userModel
         pathName: "users"
         sort: "-name"
+        entityJSONDataName: "user"
 
       params:
         resourceName: "users"

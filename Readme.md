@@ -228,9 +228,9 @@ The responses from Mongo-REST for XMLHttpRequests are always JSON and look like 
 
 ```js
 // If everything went right for entities:
-{ doc: doc }
+{ user: doc }
 // If everything went right for collections:
-{ docs: docs }
+{ users: docs }
 // If the server would normally redirect:
 { redirect: "some/url" }
 // and if there was an error

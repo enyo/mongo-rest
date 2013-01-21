@@ -411,8 +411,8 @@ class MongoRest
       return next() unless req.resource
         
       self = this
-      throw new Error("Nothing submitted.")  if not req.body or not req.body.newResource
-      info = values: req.body.newResource
+      throw new Error("Nothing submitted.")  if not req.body or not req.body[req.resource.entityJSONDataName]
+      info = values: req.body[req.resource.entityJSONDataName]
       redirectUrl = self.getCollectionUrl(req.resource)
       error = (err) ->
         info.err = err
@@ -499,10 +499,10 @@ class MongoRest
       return next() unless req.resource
 
       self = this
-      throw new Error("Nothing submitted.") if not req.body or not req.body.newResource
+      throw new Error("Nothing submitted.") if not req.body or not req.body[req.resource.entityJSONDataName]
       info =
         doc: req.doc
-        values: req.body.newResource
+        values: req.body[req.resource.entityJSONDataName]
 
       redirectUrl = self.getEntityUrl req.resource, req.doc
 
