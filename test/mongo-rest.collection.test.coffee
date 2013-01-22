@@ -249,7 +249,7 @@ describe "MongoRest", ->
       mongoRest.addInterceptor userModel, "post", interceptor("secondPost")
       mongoRest.addInterceptor userModel, "post.success", interceptor("post.success")
       mongoRest.addInterceptor userModel, "post.error", interceptor("post.error")
-      mongoRest.renderError = (err, address, req, res, next) ->
+      mongoRest.renderError = (err, req, res, next, errCode, address) ->
         err.message.should.equal "Unable to insert the record: Some Error"
         address.should.equal "/users"
         interceptorList.should.eql ["firstPost", "secondPost", "post.error"]
@@ -275,7 +275,7 @@ describe "MongoRest", ->
       mongoRest.addInterceptor userModel, "post", interceptor("secondPost")
       mongoRest.addInterceptor userModel, "post.success", interceptor("post.success")
       mongoRest.addInterceptor userModel, "post.error", interceptor("post.error")
-      mongoRest.renderError = (err, address, req, res, next) ->
+      mongoRest.renderError = (err, req, res, next, errCode, address) ->
         err.message.should.equal "Unable to insert the record: interceptor error"
         address.should.equal "/users"
         interceptorList.should.eql ["firstPost", "post.error"]
@@ -300,7 +300,7 @@ describe "MongoRest", ->
       mongoRest.addInterceptor userModel, "post.success", (info, iDone) ->
         iDone new Error("interceptor error")
 
-      mongoRest.renderError = (err, address, req, res, next) ->
+      mongoRest.renderError = (err, req, res, next, errCode, address) ->
         err.message.should.equal "Unable to insert the record: interceptor error"
         address.should.equal "/users"
         interceptorList.should.eql ["firstPost", "secondPost", "post.success", "post.error"]

@@ -298,18 +298,13 @@ class MongoRest
   # 
   # Either calles next with the error or returns it as XMLHttp.
   # 
-  # @param  {Error}    err
-  # @param  {String}   Redirect url. If set it will redirect, otherwise call next() with error.
-  # @param  {Object}   req
-  # @param  {Object}   res
-  # @param  {Function} next
   # @api private
-  renderError: (err, redirectUrl, req, res, next) ->
+  renderError: (err, req, res, next, errCode = 500, redirectUrl = null) ->
     if req.resource.enableXhr and req.xhr
-      obj = error: err.message
-      redirectUrl and (obj.redirect = redirectUrl)
-      res.send obj
+      res.send errCode, err.message
     else
+      res.status errCode if errCode?
+
       if redirectUrl
         req.flash "error", err.message
         @redirect redirectUrl, req, res, next
@@ -390,7 +385,7 @@ class MongoRest
       query.sort req.resource.sort if req.resource.sort
 
       query.exec (err, docs) =>
-        return @renderError err, null, req, res, next if err
+        return @renderError err, req, res, next if err
           
         info = docs: docs
         finish = => @renderCollection docs, req, res, next
@@ -418,7 +413,7 @@ class MongoRest
         info.err = err
         self.invokeInterceptors req.resource.model, "post.error", info, req, res, next, (interceptorErr) ->
           finalErr = interceptorErr or err
-          self.renderError new Error("Unable to insert the record: " + finalErr.message), redirectUrl, req, res, next
+          self.renderError new Error("Unable to insert the record: " + finalErr.message), req, res, next, 500, redirectUrl
 
       @invokeInterceptors req.resource.model, "post", info, req, res, next, (err) ->
         return error err if err
@@ -451,11 +446,13 @@ class MongoRest
       req.resource.model.findOne
         _id: req.params.id
       , (err, doc) ->
-        if err
-          self.renderError err, self.getCollectionUrl(req.resource), req, res, next
-          return
-        req.doc = doc
-        next()
+        return self.renderError err, req, res, next, 500, self.getCollectionUrl(req.resource) if err
+
+        unless doc
+
+        else
+          req.doc = doc
+          next()
 
 
   # Gets a single entity
@@ -466,12 +463,13 @@ class MongoRest
       return next() unless req.resource
         
       self = this
+
       info = doc: req.doc
       error = (err) ->
         info.err = err
         self.invokeInterceptors req.resource.model, "get.error", info, req, res, next, (interceptorErr) ->
           finalErr = interceptorErr or err
-          self.renderError new Error("Unable to get the record: " + finalErr.message), null, req, res, next
+          self.renderError new Error("Unable to get the record: " + finalErr.message), req, res, next
 
 
       onFinish = (err) ->
@@ -510,7 +508,7 @@ class MongoRest
         info.err = err
         self.invokeInterceptors req.resource.model, "put.error", info, req, res, next, (interceptorErr) ->
           finalErr = interceptorErr or err
-          self.renderError new Error("Unable to save the record: " + finalErr.message), redirectUrl, req, res, next
+          self.renderError new Error("Unable to save the record: " + finalErr.message), req, res, next, 500, redirectUrl
 
 
       @invokeInterceptors req.resource.model, "put", info, req, res, next, (err) ->
@@ -551,7 +549,7 @@ class MongoRest
         info.err = err
         self.invokeInterceptors req.resource.model, "delete.error", info, req, res, next, (interceptorErr) ->
           finalErr = interceptorErr or err
-          self.renderError new Error("Unable to delete the record: " + finalErr.message), redirectUrl, req, res, next
+          self.renderError new Error("Unable to delete the record: " + finalErr.message), req, res, next, 500, redirectUrl
 
 
       @invokeInterceptors req.resource.model, "delete", info, req, res, next, (err) ->
