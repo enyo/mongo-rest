@@ -427,10 +427,10 @@ class MongoRest
           self.invokeInterceptors req.resource.model, "post.success", info, req, res, next, (err) ->
             return error err if err
               
-            self.flash "success", "Successfully inserted the record.", req
             if req.resource.enableXhr and req.xhr
               self.renderEntity info.doc, req, res, next
             else
+              self.flash "success", "Successfully inserted the record.", req
               self.redirect redirectUrl, req, res, next
 
 
@@ -439,17 +439,13 @@ class MongoRest
   # This function is in charge of loading the entity.
   entity: ->
     (req, res, next) =>
-      self = this
-      unless req.resource = @getResource req.params.resourceName
-        next()
-        return
-      req.resource.model.findOne
-        _id: req.params.id
-      , (err, doc) ->
-        return self.renderError err, req, res, next, 500, self.getCollectionUrl(req.resource) if err
-
+      return next() unless req.resource = @getResource req.params.resourceName
+        
+      req.resource.model.findOne { _id: req.params.id }, (err, doc) =>
+        if err
+          @renderError err, req, res, next, 500, @getCollectionUrl(req.resource)
         unless doc
-
+          @renderError new Error("Document with id #{req.params.id} not found."), req, res, next, 404
         else
           req.doc = doc
           next()
@@ -522,9 +518,12 @@ class MongoRest
             
           self.invokeInterceptors req.resource.model, "put.success", info, req, res, next, (err) ->
             return error err if err?
-              
-            self.flash "success", "Successfully updated the record.", req
-            self.redirect redirectUrl, req, res, next
+            
+            if req.resource.enableXhr and req.xhr
+              self.renderEntity req.doc, req, res, next
+            else
+              self.flash "success", "Successfully updated the record.", req
+              self.redirect redirectUrl, req, res, next
 
 
   ###

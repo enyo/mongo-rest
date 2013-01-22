@@ -28,6 +28,10 @@ describe "MongoRest", ->
 
 
 
+  describe "entity()", ->
+    it "should send a 404 if the entity is not found"
+
+
   describe "renderEntity()", ->
     it "should render an entity correctly depending on the request", ->
       sentDoc = undefined
@@ -111,6 +115,7 @@ describe "MongoRest", ->
         resourceName: "user"
 
     mongoRest.addResource userModel, {}
+
     it "should directly render if there are no interceptors", (done) ->
       mongoRest.renderEntity = (doc) ->
         doc.should.equal req.doc
