@@ -28,6 +28,10 @@ describe "MongoRest", ->
 
 
 
+  describe "entity()", ->
+    it "should send a 404 if the entity is not found"
+
+
   describe "renderEntity()", ->
     it "should render an entity correctly depending on the request", ->
       sentDoc = undefined
@@ -111,6 +115,7 @@ describe "MongoRest", ->
         resourceName: "user"
 
     mongoRest.addResource userModel, {}
+
     it "should directly render if there are no interceptors", (done) ->
       mongoRest.renderEntity = (doc) ->
         doc.should.equal req.doc
@@ -163,7 +168,7 @@ describe "MongoRest", ->
     error = undefined
     req =
       body:
-        newResource:
+        user:
           some: "values"
 
       doc:
@@ -180,6 +185,7 @@ describe "MongoRest", ->
 
       resource:
         model: userModel
+        entityJSONDataName: "user"
         singleView: yes
         pathName: "users"
 
@@ -237,7 +243,7 @@ describe "MongoRest", ->
         mongoRest.addInterceptor userModel, "put", interceptor("secondPut")
         mongoRest.addInterceptor userModel, "put.success", interceptor("put.success")
         mongoRest.addInterceptor userModel, "put.error", interceptor("put.error")
-        mongoRest.renderError = (err, address, req, res, next) ->
+        mongoRest.renderError = (err, req, res, next, errCode, address) ->
           err.message.should.equal "Unable to save the record: Something went wrong1"
           address.should.equal "/users/12345"
           interceptorList.should.eql ["firstPut", "secondPut", "put.error"]
@@ -263,7 +269,7 @@ describe "MongoRest", ->
         mongoRest.addInterceptor userModel, "put", interceptor("secondPut")
         mongoRest.addInterceptor userModel, "put.success", interceptor("put.success")
         mongoRest.addInterceptor userModel, "put.error", interceptor("put.error")
-        mongoRest.renderError = (err, address, req, res, next) ->
+        mongoRest.renderError = (err, req, res, next, errCode, address) ->
           err.message.should.equal "Unable to save the record: interceptor error"
           address.should.equal "/users/12345"
           interceptorList.should.eql ["firstPut", "put.error"]
@@ -289,7 +295,7 @@ describe "MongoRest", ->
         mongoRest.addInterceptor userModel, "put.success", (info, iDone) ->
           iDone new Error("interceptor error")
 
-        mongoRest.renderError = (err, address, req, res, next) ->
+        mongoRest.renderError = (err, req, res, next, errCode, address) ->
           err.message.should.equal "Unable to save the record: interceptor error"
           address.should.equal "/users/12345"
           interceptorList.should.eql ["firstPut", "secondPut", "put.success", "put.error"]
@@ -338,7 +344,7 @@ describe "MongoRest", ->
         mongoRest.addInterceptor userModel, "delete", interceptor("secondDelete")
         mongoRest.addInterceptor userModel, "delete.success", interceptor("delete.success")
         mongoRest.addInterceptor userModel, "delete.error", interceptor("delete.error")
-        mongoRest.renderError = (err, address, req, res, next) ->
+        mongoRest.renderError = (err, req, res, next, errCode, address) ->
           err.message.should.equal "Unable to delete the record: Something went wrong2"
           address.should.equal "/users"
           interceptorList.should.eql ["firstDelete", "secondDelete", "delete.error"]
@@ -364,7 +370,7 @@ describe "MongoRest", ->
         mongoRest.addInterceptor userModel, "delete", interceptor("secondDelete")
         mongoRest.addInterceptor userModel, "delete.success", interceptor("delete.success")
         mongoRest.addInterceptor userModel, "delete.error", interceptor("delete.error")
-        mongoRest.renderError = (err, address, req, res, next) ->
+        mongoRest.renderError = (err, req, res, next, errCode, address) ->
           err.message.should.equal "Unable to delete the record: interceptor error"
           address.should.equal "/users"
           interceptorList.should.eql ["firstDelete", "delete.error"]
@@ -390,7 +396,7 @@ describe "MongoRest", ->
           iDone new Error("interceptor error")
 
         mongoRest.addInterceptor userModel, "delete.error", interceptor("delete.error")
-        mongoRest.renderError = (err, address, req, res, next) ->
+        mongoRest.renderError = (err, req, res, next, errCode, address) ->
           err.message.should.equal "Unable to delete the record: interceptor error"
           address.should.equal "/users"
           interceptorList.should.eql ["firstDelete", "secondDelete", "delete.success", "delete.error"]

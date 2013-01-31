@@ -319,13 +319,13 @@ describe "MongoRest", ->
   describe "renderError()", ->
     it "should send the error without flash message if XHR", (done) ->
       app = {}
-      res = send: (info) ->
-        info.should.eql
-          error: "Some error"
-          redirect: "some/url"
+      res =
+        send: (errCode, message) ->
+          errCode.should.eql 404
+          message.should.eql "Some error"
 
-        done()
-
+          done()
+        status: -> 
       req =
         resource:
           enableXhr: true
@@ -340,11 +340,13 @@ describe "MongoRest", ->
         enableXhr: false
       , true)
       mongoRest.flash "error", "test message", req
-      mongoRest.renderError new Error("Some error"), "some/url", req, res, next
+      mongoRest.renderError new Error("Some error"), req, res, next, 404, "some/url"
 
     it "should forward to next() if not XHR", (done) ->
       app = {}
-      res = {}
+      res =
+        status: -> 
+
       flashed = []
       req =
         xhr: false
@@ -365,6 +367,6 @@ describe "MongoRest", ->
         enableXhr: true
       , true)
       mongoRest.flash "error", "test message", req
-      mongoRest.renderError "Some error", null, req, res, next
+      mongoRest.renderError "Some error", req, res, next
 
 
