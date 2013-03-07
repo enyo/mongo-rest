@@ -511,8 +511,6 @@ class MongoRest
         return error err if err?
           
         req.doc.set info.values
-        # _.each info.values, (value, name) ->
-        #   req.doc[name] = value
 
         req.doc.save (err) ->
           return error err if err?
