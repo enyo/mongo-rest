@@ -1,9 +1,15 @@
-# MongoREST Version 3.0.3-dev
+# MongoREST Version 3.0.4-dev
 
 ![Build status](https://travis-ci.org/enyo/mongo-rest.png)
 
 This is an [express][] [node][] [module][node modules] to provide basic [REST][] support to
 access [mongodb][] [documents][mongodb documents] via [mongoose][].
+
+It then serves the content as JSON (if requested with `Accept: application/json`)
+or renders the entities as HTML (you have to provide the templates for it).
+
+You can configure how MongoREST looks up the templates, and which resources 
+should be served as JSON (to avoid leaking private information).
 
 
 [express]: http://www.expressjs.com/
@@ -56,64 +62,66 @@ That's it, you're done.
 
 ### 1. Including and instantiating mongo-rest
 
-MongoREST exposes a class you instatiate with your options. The long version looks like this:
+MongoREST exposes a class you instatiate with your options:
 
 ```js
 var MongoRest = require('mongo-rest')
   , mongoRest = new MongoRest(app, { ...options... });
+// or simply:
+var mongoRest = new require('mongo-rest')(app, { ...options... });
 ```
 
 The options for MongoRest are:
 
-- `pathPrefix` The path prefix for the rest resources. Default to `/`
-- `entityViewTemplate`
-  The template that will be used as view name to render entity resources.
-  `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
-- `collectionViewTemplate`
-  The template that will be used as view name to render collection resources.
-  `{{singularName}}` and `{{pluralName}}` can be used and will be substituted
-- `entityDataName`
-  The name that will be used in the JSON or in the template model. Defaults to
-  `'{{singularName}}'`.
-  So a JSON might look like this:
-  ```json
-  {
-    "user": {
-      "username": "bla"
-    }
-  }
-  ```
-- `collectionViewTemplate`
-  The name that will be used in the JSON or in the template model. Defaults to
-  `'{{pluralName}}'`.
-  So a JSON might look like this:
-  ```json
-  {
-    "users": [
-      { "username": "bla" },
-      { "username": "bla" }
-    ]
-  }
-  ```
-- `enableXhr` Enables a JSON interface for XMLHttpRequests. **Make sure you don't leak important information!**
-- `singleView` Whether there is a single view or not. If not, only the collection view will be used.
+- `urlRoot: "/"` The URL root
+- `pathPrefix: ""` The path prefix for the rest resources.
+- `pathSuffix: ""` The path prefix for the rest resources.
 
-As a one liner it looks like this:
+So this configuration: `{ urlRoot: "/my-resources/", pathPrefix: "my-", pathSuffix: "-models" }`
+will expose the `User` model at this URL: `/my-resources/my-users-models`
 
-```js
-var mongoRest = new (require('mongo-rest'))(app, options);
-```
+- `viewPrefix: "resource_"` Will be prepended to the template name
+- `viewSuffix: ""` Will be appended to the template name
+
+So the configuration: `{ viewPrefix: "entity-views/resource_", viewSuffix: "_template" }`
+will render a singular entity with the view `/entity_views/resource_user_template`
+and a collection with `/entity_views/resource_users_template`.
+
+
+- `viewDataNamePrefix: ""` Will be prepended to the data index
+- `viewDataNameSuffix: ""` Will be appended to the data index
+
+When the user model is rendered as HTML, normally the entity is put in the `user`
+and collections are put in the `users` model variables. So in your `jade` template
+you can iterate over the collections with `each user in users` etc...
+With `viewDataNamePrefix` and `viewDataNameSuffix` you can change those names.
+
+
+- `JSONDataNamePrefix: ""` Will be prepended to the data index
+- `JSONDataNameSuffix: ""` Will be appended to the data index
+
+This is the same as for the `viewDataName*` configs, except for the JSON objects.
+So the JSON returned would be: `{ "prefix_user_suffix": { ...data... } }` or
+`{ "prefix_users_suffix": [ ...entities... ] }`
+
+
+- `enableXhr: false` Enables a JSON interface for XMLHttpRequests.
+    **Make sure you don't leak important information!**
+- `singleView: true` Whether there is a single view or not.
+  If not, only the collection view will be used.
+    
+
 
 When instantiated, MongoREST registers the routes with the `app` so that all REST routes
 become accessible. If you provided `'/resources/'` as `pathPrefix` then following urls will
 become alive for the `user` resource:
 
-    GET: /resources/users (Renders a list of all users)
-    POST: /resources/users (Creates a new user)
+    GET: /url-root/users (Renders a list of all users)
+    POST: /url-root/users (Creates a new user)
 
-    GET: /resources/user/12345 (Renders the user with ID 12345)
-    PUT: /resources/user/12345 (Updates the user with ID 12345)
-    DELETE: /resources/user/12345 (Deletes the user with ID 12345)
+    GET: /url-root/users/12345 (Renders the user with ID 12345)
+    PUT: /url-root/users/12345 (Updates the user with ID 12345)
+    DELETE: /url-root/users/12345 (Deletes the user with ID 12345)
 
 
 > **Note:** `/user` and `/users` are always both valid. So you can always access
@@ -126,18 +134,30 @@ Normally you do this in the same place you define your routes. The code is quite
 forward:
 
 ```js
-mongoRest.addResource('user', require('../models/user'));
+mongoRest.addResource(require('../models/user'));
+
 // And you can pass options:
-mongoRest.addResource('hobby', require('../models/user'), {
-  pluralName: 'hobbies', // for irregular plurals
+mongoRest.addResource(require('../models/user'), {
   sort: "name username -birthdate", // Default sorting
   // And all class options can be used here to be overriden for this resource:
-  entityViewTemplate: "my_cool_template",
-  collectionViewTemplate: "my_awesome_records_template",
-  enableXhr: false,
+  viewPrefix: "my_cool_resource_",
+  enableXhr: false, // Shouldn't be served as JSON
   singleView: true
 });
 ```
+
+A few things differ from the class options here. Using the `prefix` and `suffix`
+configurations here don't work, but instead you can directly set the names.
+
+So the options are:
+
+- `entityView`
+- `collectionView`
+- `entityViewDataName`
+- `collectionViewDataName`
+- `entityJSONDataName`
+- `collectionJSONDataName`
+
 
 That's it. Now MongoREST nows that it has to use those models whenever the resources `users`
 or `hobbies` are accessed.
@@ -154,11 +174,9 @@ Two template files are needed for each resource to...
   1. ...render a list of the resource
   2. ...render a single resource
 
-To define where the views are located you specify the `entityViewTemplate` and the
-`collectionViewTemplate` options. If you pass `resources/{{singularName}}` as
-`entityViewTemplate` and `resources/{{pluralName}}` as `collectionViewTemplate` then
-MongoREST will use `resources/user` as view to render a single entity, and `resources/users`
-to render a collection.
+To define where the views are located and how thy are named, look at the `viewPrefix`
+and `viewSuffix` options.
+
 
 
 ### 4. Create interceptors (Optional)
@@ -171,9 +189,9 @@ You register an interceptor like this:
 var eventName = 'post.success'
   , handler = function(info, done, req, res, next) { /* Do stuff */ done(); };
 
-mongoRest.addInterceptor('user', eventName, handler);
+mongoRest.addInterceptor(require("../models/user"), eventName, handler);
 // You can also provide the same handler for multiple event names:
-mongoRest.addInterceptor('users', [ 'post', 'put' ], handler);
+mongoRest.addInterceptor(require("../models/user"), [ 'post', 'put' ], handler);
 ```
 
 The available event names are:
@@ -206,7 +224,7 @@ An example of an interceptor could look like this:
  * Intercepts posts and puts for guestbook-messages. It compiles the provided textSource with jade, and stores
  * the old textSource in a textVersions array to provide a history.
  */
-mongoRest.addInterceptor('guestbook-message', [ 'post', 'put' ], function(info, done) {
+mongoRest.addInterceptor(require("../models/guestbook-message"), [ 'post', 'put' ], function(info, done) {
   // Compile the new textSource value with jade, and put the compiled code in textHtml
   info.values.textHtml = (jade.compile(info.values.textSource))({});
   // Since there is no existing doc when posting a new resource, we test if it exists...
@@ -231,13 +249,7 @@ The responses from Mongo-REST for XMLHttpRequests are always JSON and look like 
 { user: doc }
 // If everything went right for collections:
 { users: docs }
-// If the server would normally redirect:
-{ redirect: "some/url" }
-// and if there was an error
-{ error: "There was a problem." }
 ```
-
-Note that `error` and `redirect` can be submitted simultaniously.
 
 
 ## License
