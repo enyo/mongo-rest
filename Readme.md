@@ -1,4 +1,4 @@
-# MongoREST Version 3.0.4-dev
+# MongoREST Version 3.0.4
 
 ![Build status](https://travis-ci.org/enyo/mongo-rest.png)
 
