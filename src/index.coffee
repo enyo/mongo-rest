@@ -510,8 +510,7 @@ class MongoRest
       @invokeInterceptors req.resource.model, "put", info, req, res, next, (err) ->
         return error err if err?
           
-        _.each info.values, (value, name) ->
-          req.doc[name] = value
+        req.doc.set info.values
 
         req.doc.save (err) ->
           return error err if err?

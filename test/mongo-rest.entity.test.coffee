@@ -178,6 +178,8 @@ describe "MongoRest", ->
             callback error
           ), 1
 
+        set: (data) ->
+
         remove: (callback) ->
           setTimeout (->
             callback error
