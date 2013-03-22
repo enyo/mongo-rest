@@ -194,8 +194,10 @@ class MongoRest
 
     resource = @getResource pathOrModel
 
+    modelName = if typeof pathOrModel == "string" then pathOrModel else pathOrModel.modelName
+
     # Check that the resource has already been defined.
-    throw new Error("The resource #{pathOrModel} is not defined!") unless resource
+    throw new Error("The resource #{modelName} is not defined!") unless resource
 
     modelName = resource.model.modelName
 
