@@ -160,16 +160,17 @@ class MongoRest
   #
   # It checks the resources for singular and plural names!
   #
-  # @param  {String} pathOrModel
+  # @param  {String} pathOrModel or Model name
   # @return {Object} null if there is no such resource
   getResource: (pathOrModel) ->
     if typeof pathOrModel == "string"
       pathName = pathOrModel
+      modelName = pathOrModel
     else
       model = pathOrModel
 
     for resource in @resources
-      return resource if resource.pathName == pathName or resource.model == model
+      return resource if resource.pathName == pathName or resource.model == model or resource.model.modelName == modelName
 
     null
 
@@ -189,12 +190,14 @@ class MongoRest
   # @param {Model} model
   # @param {String} eventOrEvents
   # @param {Function} handler
-  addInterceptor: (model, eventOrEvents, handler) ->
+  addInterceptor: (pathOrModel, eventOrEvents, handler) ->
+
+    resource = @getResource pathOrModel
 
     # Check that the resource has already been defined.
-    throw new Error("The resource #{model.modelName} is not defined!") unless @getResource model
+    throw new Error("The resource #{pathOrModel} is not defined!") unless resource
 
-    modelName = model.modelName
+    modelName = resource.model.modelName
 
     # Make sure it's an array
     events = [ ].concat eventOrEvents
