@@ -1,4 +1,4 @@
-# MongoREST Version 3.0.4
+# MongoREST Version 3.0.5
 
 ![Build status](https://travis-ci.org/enyo/mongo-rest.png)
 
@@ -10,6 +10,8 @@ or renders the entities as HTML (you have to provide the templates for it).
 
 You can configure how MongoREST looks up the templates, and which resources 
 should be served as JSON (to avoid leaking private information).
+
+It is built to be used with [ember](http://emberjs.com) and should work out of the box.
 
 
 [express]: http://www.expressjs.com/
@@ -97,6 +99,8 @@ you can iterate over the collections with `each user in users` etc...
 With `viewDataNamePrefix` and `viewDataNameSuffix` you can change those names.
 
 
+- `camelizeJSONDataKeys: true` If false, all keys will be underscored.
+
 - `JSONDataNamePrefix: ""` Will be prepended to the data index
 - `JSONDataNameSuffix: ""` Will be appended to the data index
 
@@ -104,6 +108,8 @@ This is the same as for the `viewDataName*` configs, except for the JSON objects
 So the JSON returned would be: `{ "prefix_user_suffix": { ...data... } }` or
 `{ "prefix_users_suffix": [ ...entities... ] }`
 
+(If this is not enough flexibility for you, you can overwrite the 
+`serializeDataObjectKey` and `deserializeDataObjectKey` function)
 
 - `enableXhr: false` Enables a JSON interface for XMLHttpRequests.
     **Make sure you don't leak important information!**

@@ -42,7 +42,8 @@ class MongoRest
     viewDataNameSuffix: ""
 
     # Goes through the *whole* (even the data name) JSON array and converts the
-    # keys to camelized if yes
+    # keys to camelized if yes.
+    # Otherwise the keys are underscored.
     camelizeJSONDataKeys: yes
 
     # Will be prepended to the data index
@@ -119,7 +120,72 @@ class MongoRest
     model = resource.model
     dataName =  if collection then inflection.pluralize model.modelName else model.modelName
     dataName = dataName.charAt(0).toLowerCase() + dataName.slice(1);
-    @options.JSONDataNamePrefix + dataName + @options.JSONDataNameSuffix
+    @serializeDataObjectKey @options.JSONDataNamePrefix + dataName + @options.JSONDataNameSuffix
+
+
+
+
+  # Goes through the whole data object and sanitizes the keys.
+  # Calls `serializeDataObjectKey` for each key.
+  serializeDataObject: (obj, child = false) ->
+    obj = JSON.parse JSON.stringify obj unless child
+
+    serializedObj = { }
+    for key, value of obj
+      key = @serializeDataObjectKey key
+      value = @serializeDataValue value
+      serializedObj[key] = value
+    return serializedObj
+
+
+  # This uses the camelizeJSONDataKeys option
+  serializeDataObjectKey: (key) ->
+    return key if @options.camelizeJSONDataKeys # They are camelized by default
+
+    key = key.replace /(.)([A-Z0-9]+)/g, "$1_$2"
+
+     # Makes sure that words like mySQLData gets treated properly
+    key = key.replace /([A-Z])([A-Z][a-z])/g, "$1_$2"
+
+    key.toLowerCase()
+
+
+  serializeDataValue: (value) ->
+    if value instanceof Array
+      value = (@serializeDataValue(val) for val in value)
+    else if typeof value == "object"
+      value = @serializeDataObject value, true
+
+    value
+
+
+  # Goes through the whole data object and deserializes the keys.
+  # Calls `deserializeDataObjectKeys` for each key.
+  deserializeDataObject: (obj) ->
+    deserializedObject = { }
+    for key, value of obj
+      key = @deserializeDataObjectKey key
+      value = @deserializeDataObjectValue value
+      deserializedObject[key] = value
+    return deserializedObject
+
+  # This uses the camelizeJSONDataKeys option
+  deserializeDataObjectKey: (key) ->
+    return key if @options.camelizeJSONDataKeys
+
+    key = key.replace /_([a-z0-9])/g, (match, string) -> string.toUpperCase()
+
+    key
+
+  deserializeDataObjectValue: (value) ->
+    if value instanceof Array
+      value = (@deserializeDataObjectValue val for val in value)
+    else if typeof value == "object"
+      value = @deserializeDataObject value
+
+    value
+
+
 
   # Adds a model to be served as rest.
   # 
@@ -160,16 +226,17 @@ class MongoRest
   #
   # It checks the resources for singular and plural names!
   #
-  # @param  {String} pathOrModel
+  # @param  {String} pathOrModel or Model name
   # @return {Object} null if there is no such resource
   getResource: (pathOrModel) ->
     if typeof pathOrModel == "string"
       pathName = pathOrModel
+      modelName = pathOrModel
     else
       model = pathOrModel
 
     for resource in @resources
-      return resource if resource.pathName == pathName or resource.model == model
+      return resource if resource.pathName == pathName or resource.model == model or resource.model.modelName == modelName
 
     null
 
@@ -189,12 +256,16 @@ class MongoRest
   # @param {Model} model
   # @param {String} eventOrEvents
   # @param {Function} handler
-  addInterceptor: (model, eventOrEvents, handler) ->
+  addInterceptor: (pathOrModel, eventOrEvents, handler) ->
+
+    resource = @getResource pathOrModel
+
+    modelName = if typeof pathOrModel == "string" then pathOrModel else pathOrModel.modelName
 
     # Check that the resource has already been defined.
-    throw new Error("The resource #{model.modelName} is not defined!") unless @getResource model
+    throw new Error("The resource #{modelName} is not defined!") unless resource
 
-    modelName = model.modelName
+    modelName = resource.model.modelName
 
     # Make sure it's an array
     events = [ ].concat eventOrEvents
@@ -335,7 +406,7 @@ class MongoRest
 
     if resource.enableXhr and req.xhr
       data[resource.collectionJSONDataName] = (doc.toObject() for doc in docs)
-      res.send data
+      res.send @serializeDataObject data
     else
       data[resource.collectionViewDataName] = (doc.toObject() for doc in docs)
       data.site = req.params.resourceName + "-list"
@@ -350,7 +421,7 @@ class MongoRest
 
     if resource.enableXhr and req.xhr
       data[resource.entityJSONDataName] = doc.toObject()
-      res.send data
+      res.send @serializeDataObject data
     else
       data[resource.entityViewDataName] = doc.toObject()
       data.site = req.params.resourceName + "-show"
@@ -407,7 +478,7 @@ class MongoRest
         
       self = this
       throw new Error("Nothing submitted.")  if not req.body or not req.body[req.resource.entityJSONDataName]
-      info = values: req.body[req.resource.entityJSONDataName]
+      info = values: @deserializeDataObject req.body[req.resource.entityJSONDataName]
       redirectUrl = self.getCollectionUrl(req.resource)
       error = (err) ->
         info.err = err
@@ -496,7 +567,7 @@ class MongoRest
       throw new Error("Nothing submitted.") if not req.body or not req.body[req.resource.entityJSONDataName]
       info =
         doc: req.doc
-        values: req.body[req.resource.entityJSONDataName]
+        values: @deserializeDataObject req.body[req.resource.entityJSONDataName]
 
       redirectUrl = self.getEntityUrl req.resource, req.doc
 

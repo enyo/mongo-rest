@@ -226,6 +226,116 @@ describe "MongoRest", ->
         _id: 123
       ).should.equal "/resource/users"
 
+  describe "serializeDataObject()", ->
+    it "should properly underscore the keys", ->
+      app = {}
+      mongoRest = new MongoRest app, camelizeJSONDataKeys: false, true # dont register routes
+
+      mongoRest.serializeDataObjectKey("BlaBla").should.equal "bla_bla"
+      mongoRest.serializeDataObjectKey("someSpecialValue").should.equal "some_special_value"
+      mongoRest.serializeDataObjectKey("mySQLData").should.equal "my_sql_data"
+      mongoRest.serializeDataObjectKey("aNumber2").should.equal "a_number_2"
+
+    it "should properly camelize the keys", ->
+      app = {}
+      mongoRest = new MongoRest app, camelizeJSONDataKeys: true, true # dont register routes
+
+      mongoRest.serializeDataObjectKey("BlaBla").should.equal "BlaBla"
+      mongoRest.serializeDataObjectKey("someSpecialValue").should.equal "someSpecialValue"
+      mongoRest.serializeDataObjectKey("mySQLData").should.equal "mySQLData"
+
+    it "should properly handle objects recursively", ->
+      app = {}
+      mongoRest = new MongoRest app, camelizeJSONDataKeys: false, true # dont register routes
+
+      obj =
+        myTest:
+          someTest: 1
+          someTest2: [
+            {
+              inSide: 1
+              inSide2: 1
+              inSide3: [
+                "string1"
+                "string2"
+              ]
+            }
+            { inSide: 2 }
+          ]
+
+      sanitizedObj = mongoRest.serializeDataObject(obj)
+
+      sanitizedObj.my_test.some_test_2.should.be.instanceof Array
+
+      sanitizedObj.should.eql
+        my_test:
+          some_test: 1
+          some_test_2: [
+            {
+              in_side: 1
+              in_side_2: 1
+              in_side_3: [
+                "string1"
+                "string2"
+              ]
+            }
+            { in_side: 2 }
+          ]
+
+  describe "deserializeDataObject()", ->
+    it "should properly camelize the keys", ->
+      app = {}
+      mongoRest = new MongoRest app, camelizeJSONDataKeys: false, true # dont register routes
+
+      mongoRest.deserializeDataObjectKey("bla_bla").should.equal "blaBla"
+      mongoRest.deserializeDataObjectKey("some_special_value").should.equal "someSpecialValue"
+      mongoRest.deserializeDataObjectKey("my_sql_data").should.equal "mySqlData"
+      mongoRest.deserializeDataObjectKey("a_number_2").should.equal "aNumber2"
+
+    it "should properly camelize the keys", ->
+      app = {}
+      mongoRest = new MongoRest app, camelizeJSONDataKeys: true, true # dont register routes
+
+      mongoRest.deserializeDataObjectKey("BlaBla").should.equal "BlaBla"
+      mongoRest.deserializeDataObjectKey("someSpecialValue").should.equal "someSpecialValue"
+      mongoRest.deserializeDataObjectKey("mySQLData").should.equal "mySQLData"
+
+    it "should properly handle objects recursively", ->
+      app = {}
+      mongoRest = new MongoRest app, camelizeJSONDataKeys: false, true # dont register routes
+
+      obj =
+        my_test:
+          some_test: 1
+          some_test_2: [
+            {
+              in_side: 1
+              in_side_2: 1
+              in_side_3: [
+                "string1"
+                "string2"
+              ]            }
+            { in_side: 2 }
+          ]
+
+      deserializedObj = mongoRest.deserializeDataObject(obj)
+
+      deserializedObj.myTest.someTest2.should.be.instanceof Array
+
+      deserializedObj.should.eql
+        myTest:
+          someTest: 1
+          someTest2: [
+            {
+              inSide: 1
+              inSide2: 1
+              inSide3: [
+                "string1"
+                "string2"
+              ]
+            }
+            { inSide: 2 }
+          ]
 
   describe "redirect()", ->
     it "should redirect if not xhr", (done) ->
