@@ -254,7 +254,7 @@ describe "MongoRest", ->
           someTest2: [
             {
               inSide: 1
-              inSide2: 1
+              inSide2: null
               inSide3: [
                 "string1"
                 "string2"
@@ -273,7 +273,7 @@ describe "MongoRest", ->
           some_test_2: [
             {
               in_side: 1
-              in_side_2: 1
+              in_side_2: null
               in_side_3: [
                 "string1"
                 "string2"
@@ -310,7 +310,7 @@ describe "MongoRest", ->
           some_test_2: [
             {
               in_side: 1
-              in_side_2: 1
+              in_side_2: null
               in_side_3: [
                 "string1"
                 "string2"
@@ -328,7 +328,7 @@ describe "MongoRest", ->
           someTest2: [
             {
               inSide: 1
-              inSide2: 1
+              inSide2: null
               inSide3: [
                 "string1"
                 "string2"
