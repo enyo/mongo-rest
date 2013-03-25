@@ -255,6 +255,10 @@ describe "MongoRest", ->
             {
               inSide: 1
               inSide2: 1
+              inSide3: [
+                "string1"
+                "string2"
+              ]
             }
             { inSide: 2 }
           ]
@@ -270,6 +274,10 @@ describe "MongoRest", ->
             {
               in_side: 1
               in_side_2: 1
+              in_side_3: [
+                "string1"
+                "string2"
+              ]
             }
             { in_side: 2 }
           ]
@@ -303,7 +311,10 @@ describe "MongoRest", ->
             {
               in_side: 1
               in_side_2: 1
-            }
+              in_side_3: [
+                "string1"
+                "string2"
+              ]            }
             { in_side: 2 }
           ]
 
@@ -318,6 +329,10 @@ describe "MongoRest", ->
             {
               inSide: 1
               inSide2: 1
+              inSide3: [
+                "string1"
+                "string2"
+              ]
             }
             { inSide: 2 }
           ]
