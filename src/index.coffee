@@ -151,6 +151,8 @@ class MongoRest
 
 
   serializeDataValue: (value) ->
+    return value unless value
+
     if value instanceof Array
       value = (@serializeDataValue(val) for val in value)
     else if typeof value == "object"
@@ -178,6 +180,8 @@ class MongoRest
     key
 
   deserializeDataObjectValue: (value) ->
+    return value unless value
+
     if value instanceof Array
       value = (@deserializeDataObjectValue val for val in value)
     else if typeof value == "object"
