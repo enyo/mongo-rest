@@ -125,6 +125,19 @@ class MongoRest
 
 
 
+  # Goes through the whole data object and sanitizes the keys.
+  # Calls `serializeDataObjectKey` for each key.
+  serializeDataObject: (obj, child = false) ->
+    obj = JSON.parse JSON.stringify obj unless child
+
+    serializedObj = { }
+    for key, value of obj
+      key = @serializeDataObjectKey key
+      value = @serializeDataValue value
+      serializedObj[key] = value
+    return serializedObj
+
+
   # This uses the camelizeJSONDataKeys option
   serializeDataObjectKey: (key) ->
     return key if @options.camelizeJSONDataKeys # They are camelized by default
@@ -137,22 +150,24 @@ class MongoRest
     key.toLowerCase()
 
 
-  # Goes through the whole data object and sanitizes the keys.
-  # Calls `serializeDataObjectKey` for each key.
-  serializeDataObject: (obj, child = false) ->
-    obj = JSON.parse JSON.stringify obj unless child
+  serializeDataValue: (value) ->
+    if value instanceof Array
+      value = (@serializeDataValue(val) for val in value)
+    else if typeof value == "object"
+      value = @serializeDataObject value, true
 
-    serializedObj = { }
+    value
+
+
+  # Goes through the whole data object and deserializes the keys.
+  # Calls `deserializeDataObjectKeys` for each key.
+  deserializeDataObject: (obj) ->
+    deserializedObject = { }
     for key, value of obj
-      key = @serializeDataObjectKey key
-      if value instanceof Array
-        value = (@serializeDataObject(val, true) for val in value)
-      else if typeof value == "object"
-        value = @serializeDataObject value, true
-      serializedObj[key] = value
-    return serializedObj
-
-
+      key = @deserializeDataObjectKey key
+      value = @deserializeDataObjectValue value
+      deserializedObject[key] = value
+    return deserializedObject
 
   # This uses the camelizeJSONDataKeys option
   deserializeDataObjectKey: (key) ->
@@ -162,18 +177,13 @@ class MongoRest
 
     key
 
-  # Goes through the whole data object and deserializes the keys.
-  # Calls `deserializeDataObjectKeys` for each key.
-  deserializeDataObject: (obj) ->
-    deserializedObject = { }
-    for key, value of obj
-      key = @deserializeDataObjectKey key
-      if value instanceof Array
-        value = (@deserializeDataObject(val) for val in value)
-      else if typeof value == "object"
-        value = @deserializeDataObject value
-      deserializedObject[key] = value
-    return deserializedObject
+  deserializeDataObjectValue: (value) ->
+    if value instanceof Array
+      value = (@deserializeDataObjectValue val for val in value)
+    else if typeof value == "object"
+      value = @deserializeDataObject value
+
+    value
 
 
 
