@@ -234,7 +234,7 @@ describe "MongoRest", ->
       mongoRest.serializeDataObjectKey("BlaBla").should.equal "bla_bla"
       mongoRest.serializeDataObjectKey("someSpecialValue").should.equal "some_special_value"
       mongoRest.serializeDataObjectKey("mySQLData").should.equal "my_sql_data"
-      mongoRest.serializeDataObjectKey("aNumber2").should.equal "a_number_2"
+      mongoRest.serializeDataObjectKey("aNumber2").should.equal "a_number2"
 
     it "should properly camelize the keys", ->
       app = {}
@@ -265,16 +265,16 @@ describe "MongoRest", ->
 
       sanitizedObj = mongoRest.serializeDataObject(obj)
 
-      sanitizedObj.my_test.some_test_2.should.be.instanceof Array
+      sanitizedObj.my_test.some_test2.should.be.instanceof Array
 
       sanitizedObj.should.eql
         my_test:
           some_test: 1
-          some_test_2: [
+          some_test2: [
             {
               in_side: 1
-              in_side_2: null
-              in_side_3: [
+              in_side2: null
+              in_side3: [
                 "string1"
                 "string2"
               ]
@@ -290,7 +290,7 @@ describe "MongoRest", ->
       mongoRest.deserializeDataObjectKey("bla_bla").should.equal "blaBla"
       mongoRest.deserializeDataObjectKey("some_special_value").should.equal "someSpecialValue"
       mongoRest.deserializeDataObjectKey("my_sql_data").should.equal "mySqlData"
-      mongoRest.deserializeDataObjectKey("a_number_2").should.equal "aNumber2"
+      mongoRest.deserializeDataObjectKey("a_number2").should.equal "aNumber2"
 
     it "should properly camelize the keys", ->
       app = {}
@@ -307,11 +307,11 @@ describe "MongoRest", ->
       obj =
         my_test:
           some_test: 1
-          some_test_2: [
+          some_test2: [
             {
               in_side: 1
-              in_side_2: null
-              in_side_3: [
+              in_side2: null
+              in_side3: [
                 "string1"
                 "string2"
               ]            }

@@ -142,7 +142,7 @@ class MongoRest
   serializeDataObjectKey: (key) ->
     return key if @options.camelizeJSONDataKeys # They are camelized by default
 
-    key = key.replace /(.)([A-Z0-9]+)/g, "$1_$2"
+    key = key.replace /(.)([A-Z]+)/g, "$1_$2"
 
      # Makes sure that words like mySQLData gets treated properly
     key = key.replace /([A-Z])([A-Z][a-z])/g, "$1_$2"
@@ -175,7 +175,7 @@ class MongoRest
   deserializeDataObjectKey: (key) ->
     return key if @options.camelizeJSONDataKeys
 
-    key = key.replace /_([a-z0-9])/g, (match, string) -> string.toUpperCase()
+    key = key.replace /_([a-z])/g, (match, string) -> string.toUpperCase()
 
     key
 
