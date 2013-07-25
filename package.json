@@ -1,7 +1,7 @@
 {
     "name": "mongo-rest"
   , "description": "A simple to use mongoose REST API."
-  , "version": "3.0.9-dev"
+  , "version": "3.0.8-dev"
   , "author": "Matias Meno <m@tias.me>"
   , "main": "./index.js"
   , "private": false
