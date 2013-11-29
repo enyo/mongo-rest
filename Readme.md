@@ -77,7 +77,7 @@ The options for MongoRest are:
 
 - `urlRoot: "/"` The URL root
 - `pathPrefix: ""` The path prefix for the rest resources.
-- `pathSuffix: ""` The path prefix for the rest resources.
+- `pathSuffix: ""` The path suffix for the rest resources.
 
 So this configuration: `{ urlRoot: "/my-resources/", pathPrefix: "my-", pathSuffix: "-models" }`
 will expose the `User` model at this URL: `/my-resources/my-users-models`
