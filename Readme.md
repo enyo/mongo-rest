@@ -32,7 +32,7 @@ library][]. If you contribute please make sure that you write tests for it.
 
 [semantic versioning]: http://semver.org/
 [tag script]: https://github.com/enyo/tag
-[mocha test framework]: http://visionmedia.github.com/mocha/
+[mocha test framework]: https://mochajs.org/
 [should assertion library]: https://github.com/visionmedia/should.js
 
 
