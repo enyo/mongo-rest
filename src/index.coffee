@@ -455,8 +455,11 @@ class MongoRest
   collectionGet: ->
     (req, res, next) =>
       return next() unless req.resource
+
+      # ember.js passes find queries via the query string, add support for these out of the box
+      filter = req.query || null
         
-      query = req.resource.model.find()
+      query = req.resource.model.find(filter)
       query.sort req.resource.sort if req.resource.sort
 
       query.exec (err, docs) =>
